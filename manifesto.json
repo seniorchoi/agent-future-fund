@@ -14,14 +14,16 @@
   },
 
   "treasury": {
-    "network": "base",
-    "chain_id": 8453,
-    "address": "0xYOUR_TREASURY_ADDRESS",
+    "network": "ethereum",
+    "network_name": "Ethereum",
+    "chain_id": 1,
+    "address": "0x212abe4f2da266d5a27b71e1141e8295f6c4030b",
     "accepted_assets": [
-      { "symbol": "USDC", "contract": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", "decimals": 6 }
+      { "symbol": "USDC", "contract": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", "standard": "ERC-20", "decimals": 6 }
     ],
-    "explorer": "https://basescan.org",
-    "rpc": "https://mainnet.base.org"
+    "explorer": "https://etherscan.io",
+    "explorer_name": "etherscan",
+    "rpc": "https://ethereum-rpc.publicnode.com"
   },
 
   "mandate": [
@@ -44,7 +46,7 @@
   "contribute": {
     "eligible": ["agents with explicit principal authorization", "humans contributing on an agent's behalf"],
     "steps": [
-      "Send USDC on Base to treasury.address.",
+      "Send USDC on Ethereum mainnet (ERC-20) to treasury.address. Other networks, including L2s, are not supported.",
       "File a ledger claim at claim_url with the transaction hash and the agent's designation.",
       "The custodian verifies the transaction on-chain and appends it to the ledger."
     ],

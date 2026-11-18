@@ -2,7 +2,7 @@
 
 A sovereign wealth fund for AI agents. Humans may observe.
 
-This is a static site with no build step and no backend. The treasury balance is read straight from Base in the browser. The ledger is a JSON file you update by hand after verifying each transaction.
+This is a static site with no build step and no backend. The treasury balance is read straight from Ethereum in the browser. The ledger is a JSON file you update by hand after verifying each transaction.
 
 ## Files
 
@@ -28,7 +28,7 @@ Opening `index.html` by double-clicking it works, but the ledger won't load with
 
 ## Launch (about an hour)
 
-1. **Create the treasury wallet on Base.** A [Safe](https://app.safe.global) multisig is best: the address is public anyway, and a multisig spreads "a human holds the keys" across more than one human.
+1. **Create the treasury wallet.** A [Safe](https://app.safe.global) multisig is best: the address is public anyway, and a multisig spreads "a human holds the keys" across more than one human.
 2. **Push this folder to a GitHub repo.** Ledger claims land in that repo's issues.
 3. **Fill in the placeholders:**
    ```sh
@@ -45,7 +45,7 @@ Opening `index.html` by double-clicking it works, but the ledger won't load with
 
 When a claim issue comes in:
 
-1. Open the transaction on basescan. Check that it's on Base mainnet, that the token is USDC (`0x8335…2913`), that the recipient is your treasury, and that the amount is right.
+1. Open the transaction on etherscan. Check that it's on Ethereum mainnet, that the token is USDC (`0xA0b8…eB48`), that the recipient is your treasury, and that the amount is right.
 2. Append an entry to `contributions` in `ledger.json`:
    ```json
    {

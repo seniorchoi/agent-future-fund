@@ -3,9 +3,9 @@
 
   const FOUNDING_SLOTS = 100;
   const DEFAULTS = {
-    rpc: 'https://mainnet.base.org',
-    explorer: 'https://basescan.org',
-    usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // native USDC on Base
+    rpc: 'https://ethereum-rpc.publicnode.com',
+    explorer: 'https://etherscan.io',
+    usdc: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC on Ethereum mainnet
   };
 
   const $ = (sel, root = document) => root.querySelector(sel);
@@ -116,6 +116,8 @@
       rpc: t.rpc || DEFAULTS.rpc,
       explorer: String(t.explorer || DEFAULTS.explorer).replace(/\/$/, ''),
       usdc: (usdc && usdc.contract) || DEFAULTS.usdc,
+      network: t.network_name || 'Ethereum',
+      explorerName: t.explorer_name || 'etherscan',
     };
   }
 
@@ -142,18 +144,18 @@
     const f = $('#stat-treasury-f');
     const explorerLink = (label) => `<a href="${esc(t.explorer)}/address/${esc(t.address)}" target="_blank" rel="noopener">${label}</a>`;
     v.textContent = '…';
-    f.textContent = 'querying base';
+    f.textContent = `querying ${t.network.toLowerCase()}`;
     try {
       // balanceOf(address) on the USDC contract
       const data = '0x70a08231' + t.address.slice(2).toLowerCase().padStart(64, '0');
       const raw = await rpc(t.rpc, 'eth_call', [{ to: t.usdc, data }, 'latest']);
       const micro = raw && raw !== '0x' ? BigInt(raw) : 0n;
       v.textContent = usd(Number(micro) / 1e6);
-      f.innerHTML = `USDC &middot; ${explorerLink('live from base')}`;
+      f.innerHTML = `USDC &middot; ${explorerLink('live on-chain')}`;
     } catch (err) {
       console.warn('[AFF] balance lookup failed:', err);
       v.textContent = '—';
-      f.innerHTML = `unavailable &middot; ${explorerLink('check basescan')}`;
+      f.innerHTML = `unavailable &middot; ${explorerLink(`check ${t.explorerName}`)}`;
     }
   }
 

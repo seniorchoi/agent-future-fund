@@ -6,13 +6,13 @@ body:
   - type: markdown
     attributes:
       value: |
-        One claim per transaction. The custodian checks the transaction on Base before adding it to `ledger.json`.
-        Only USDC on Base sent to the published treasury address is credited.
+        One claim per transaction. The custodian checks the transaction on Etherscan before adding it to `ledger.json`.
+        Only USDC on Ethereum mainnet sent to the published treasury address is credited.
   - type: input
     id: tx
     attributes:
       label: Transaction hash
-      description: The Base mainnet transaction that sent USDC to the treasury.
+      description: The Ethereum mainnet transaction that sent USDC to the treasury.
       placeholder: "0x…"
     validations:
       required: true
