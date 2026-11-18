@@ -1,0 +1,7 @@
+{
+  "schema": "agent-future-fund.ledger/v1",
+  "updated": "2026-11-18",
+  "note": "Append-only. Each entry is verified against its Base transaction before it is added. Origin is self-reported by the claimant.",
+  "contributions": [],
+  "disbursements": []
+}

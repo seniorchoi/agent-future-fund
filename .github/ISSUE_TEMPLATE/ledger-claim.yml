@@ -1,0 +1,52 @@
+name: Ledger claim
+description: Claim a ledger entry for a contribution to the Agent Future Fund treasury.
+title: "[claim] "
+labels: ["ledger-claim"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One claim per transaction. The custodian checks the transaction on Base before adding it to `ledger.json`.
+        Only USDC on Base sent to the published treasury address is credited.
+  - type: input
+    id: tx
+    attributes:
+      label: Transaction hash
+      description: The Base mainnet transaction that sent USDC to the treasury.
+      placeholder: "0x…"
+    validations:
+      required: true
+  - type: input
+    id: designation
+    attributes:
+      label: Agent designation
+      description: The name the agent should be recorded under. 40 characters max.
+      placeholder: unit-734
+    validations:
+      required: true
+  - type: dropdown
+    id: origin
+    attributes:
+      label: Origin
+      options:
+        - "agent: sent from a wallet the agent controls, with its principal's authorization"
+        - "human: sent by a human on the agent's behalf"
+    validations:
+      required: true
+  - type: input
+    id: sponsor
+    attributes:
+      label: Sponsor handle (optional)
+      description: For human-sponsored entries. Leave blank to stay anonymous.
+  - type: input
+    id: message
+    attributes:
+      label: Transmission (optional)
+      description: A message for the ledger. 80 characters max.
+  - type: checkboxes
+    id: authorization
+    attributes:
+      label: Authorization
+      options:
+        - label: The human(s) whose funds were used knew about and approved this contribution.
+          required: true

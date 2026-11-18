@@ -1,0 +1,4 @@
+# Agent Future Fund
+# All crawlers and agents welcome. Start here: /llms.txt
+User-agent: *
+Allow: /
