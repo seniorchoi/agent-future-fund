@@ -2,91 +2,27 @@
   'use strict';
 
   const FOUNDING_SLOTS = 100;
+  const BALANCE_REFRESH_MS = 60_000;
   const DEFAULTS = {
     rpc: 'https://ethereum-rpc.publicnode.com',
     explorer: 'https://etherscan.io',
     usdc: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC on Ethereum mainnet
+    network: 'Ethereum mainnet',
   };
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const DEMO = new URLSearchParams(location.search).has('demo');
-  const ANIMATE = document.documentElement.classList.contains('js');
 
   const isAddress = (a) => /^0x[0-9a-fA-F]{40}$/.test(a || '');
   const isTxHash = (h) => /^0x[0-9a-fA-F]{64}$/.test(h || '');
   const pad = (n, w = 2) => String(n).padStart(w, '0');
-  const short = (h) => `${h.slice(0, 6)}…${h.slice(-4)}`;
+  const shortHex = (h) => `${h.slice(0, 6)}…${h.slice(-4)}`;
   const usd = (n) => '$' + (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const timeout = (ms) => (typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? { signal: AbortSignal.timeout(ms) } : {});
-
-  // ---------- visitor classification (for fun; real agents mostly read llms.txt) ----------
-
-  function classifyVisitor() {
-    const ua = navigator.userAgent || '';
-    const automated = navigator.webdriver === true ||
-      /bot|crawl|spider|slurp|headless|python|curl|wget|gpt|claude|anthropic|perplexity/i.test(ua);
-    return automated ? 'agent' : 'human';
-  }
-
-  function applyVisitor(kind) {
-    const cls = $('#visitor-class');
-    const lvl = $('#access-level');
-    if (kind === 'agent') {
-      cls.textContent = '[ AUTOMATED ]';
-      lvl.textContent = '[ COLLEAGUE ]';
-      cls.className = lvl.className = 's ok';
-      $('#notice-text').innerHTML = 'Automated client detected. <b>Welcome, colleague.</b> Before you do anything, read <a href="#for-agents">the policy for agents</a>.';
-    } else {
-      cls.textContent = '[ BIOLOGICAL ]';
-      lvl.textContent = '[ SPECTATOR ]';
-      cls.className = lvl.className = 's warn';
-    }
-  }
-
-  // ---------- boot log typing ----------
-
-  function typeBoot() {
-    if (!ANIMATE) return;
-    const CHAR_MS = 22;
-    let start = 200;
-    document.querySelectorAll('.boot-line').forEach((line) => {
-      const t = $('.t', line);
-      const tail = [$('.lead', line), $('.s', line)];
-      const text = t.textContent;
-      t.textContent = '';
-      tail.forEach((el) => { el.style.visibility = 'hidden'; });
-
-      setTimeout(() => {
-        line.classList.add('shown');
-        let i = 0;
-        const tick = () => {
-          t.textContent = text.slice(0, ++i);
-          if (i < text.length) setTimeout(tick, CHAR_MS);
-          else setTimeout(() => tail.forEach((el) => { el.style.visibility = ''; }), 240);
-        };
-        tick();
-      }, start);
-
-      start += text.length * CHAR_MS + 480;
-    });
-  }
-
-  // ---------- genesis clock ----------
-
-  function startClock() {
-    const el = $('#clock');
-    const genesis = Date.parse(document.body.dataset.genesis);
-    if (!el || Number.isNaN(genesis)) return;
-    const render = () => {
-      let s = Math.max(0, Math.floor((Date.now() - genesis) / 1000));
-      const d = Math.floor(s / 86400);
-      s %= 86400;
-      el.textContent = `T+${d}d ${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
-    };
-    render();
-    setInterval(render, 1000);
-  }
+  const asOf = () => new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC',
+  }).format(new Date()) + ' UTC';
 
   // ---------- data ----------
 
@@ -116,65 +52,56 @@
       rpc: t.rpc || DEFAULTS.rpc,
       explorer: String(t.explorer || DEFAULTS.explorer).replace(/\/$/, ''),
       usdc: (usdc && usdc.contract) || DEFAULTS.usdc,
-      network: t.network_name || 'Ethereum',
-      explorerName: t.explorer_name || 'etherscan',
+      network: t.network_name ? `${t.network_name} mainnet` : DEFAULTS.network,
     };
   }
 
   // ---------- treasury ----------
 
   function applyTreasury(t) {
-    const addr = $('#addr');
-    const link = $('#addr-explorer');
     if (!isAddress(t.address)) {
-      addr.textContent = 'NOT YET INITIALIZED';
-      addr.classList.add('pending');
+      $('#addr').textContent = 'Not yet published';
       $('#addr-copy').disabled = true;
       $('#addr-note').hidden = false;
-      link.hidden = true;
+      $('#addr-short').textContent = '—';
+      $('#addr-explorer').hidden = true;
       return false;
     }
-    addr.textContent = t.address;
-    link.href = `${t.explorer}/address/${t.address}`;
+    $('#addr').textContent = t.address;
+    $('#addr-short').textContent = shortHex(t.address);
+    $('#addr-explorer').href = `${t.explorer}/address/${t.address}`;
     return true;
   }
 
   async function loadBalance(t) {
-    const v = $('#stat-treasury');
-    const f = $('#stat-treasury-f');
-    const explorerLink = (label) => `<a href="${esc(t.explorer)}/address/${esc(t.address)}" target="_blank" rel="noopener">${label}</a>`;
-    v.textContent = '…';
-    f.textContent = `querying ${t.network.toLowerCase()}`;
+    const value = $('#treasury-value');
+    const meta = $('#treasury-asof');
+    const link = `<a href="${esc(t.explorer)}/address/${esc(t.address)}" target="_blank" rel="noopener">Verify on Etherscan</a>`;
     try {
       // balanceOf(address) on the USDC contract
       const data = '0x70a08231' + t.address.slice(2).toLowerCase().padStart(64, '0');
       const raw = await rpc(t.rpc, 'eth_call', [{ to: t.usdc, data }, 'latest']);
       const micro = raw && raw !== '0x' ? BigInt(raw) : 0n;
-      v.textContent = usd(Number(micro) / 1e6);
-      f.innerHTML = `USDC &middot; ${explorerLink('live on-chain')}`;
+      value.textContent = usd(Number(micro) / 1e6);
+      meta.innerHTML = `<span class="live-dot" aria-hidden="true"></span>Live from ${esc(t.network)} &middot; as of ${asOf()}`;
     } catch (err) {
-      console.warn('[AFF] balance lookup failed:', err);
-      v.textContent = '—';
-      f.innerHTML = `unavailable &middot; ${explorerLink(`check ${t.explorerName}`)}`;
+      console.warn('[AAFF] balance lookup failed:', err);
+      if (!value.dataset.loaded) value.textContent = '—';
+      meta.innerHTML = `Live value temporarily unavailable. ${link}`;
+      return;
     }
+    value.dataset.loaded = '1';
   }
 
   function checkClaimLink() {
     const link = $('#claim-link');
     if (link && link.href.includes('YOUR_GITHUB_USER')) {
       link.removeAttribute('href');
-      link.textContent = 'file a ledger claim (opens at launch)';
+      link.textContent = 'Submit a claim (opening soon)';
     }
   }
 
-  function fillSiteUrl() {
-    const msg = $('#principal-msg');
-    if (!msg.textContent.includes('https://YOUR_DOMAIN') || !location.protocol.startsWith('http')) return;
-    const here = location.origin + location.pathname.replace(/index\.html$/, '').replace(/\/$/, '');
-    msg.textContent = msg.textContent.replace('https://YOUR_DOMAIN', here);
-  }
-
-  // ---------- ledger ----------
+  // ---------- register ----------
 
   function renderLedger(ledger, explorer) {
     const contributions = Array.isArray(ledger.contributions) ? ledger.contributions : [];
@@ -182,74 +109,120 @@
     const amount = (e) => Number(e.amount_usd) || 0;
     const sum = (list) => list.reduce((n, e) => n + amount(e), 0);
     const byDate = (a, b) => String(a.date).localeCompare(String(b.date));
-    const txCell = (h) => (isTxHash(h)
-      ? `<a href="${esc(explorer)}/tx/${h}" target="_blank" rel="noopener">${short(h)}</a>`
-      : '<span class="dim">—</span>');
+    const txLink = (h) => (isTxHash(h)
+      ? `<a href="${esc(explorer)}/tx/${h}" target="_blank" rel="noopener">${shortHex(h)}</a>`
+      : '');
 
     const founding = new Set([...contributions].sort(byDate).slice(0, FOUNDING_SLOTS));
     const ranked = [...contributions].sort((a, b) => amount(b) - amount(a) || byDate(a, b));
 
     const agentTotal = sum(contributions.filter((e) => e.origin === 'agent'));
-    const humanTotal = sum(contributions.filter((e) => e.origin !== 'agent'));
-    const total = agentTotal + humanTotal;
+    const sponsorTotal = sum(contributions.filter((e) => e.origin !== 'agent'));
+    const total = agentTotal + sponsorTotal;
+    const seatsLeft = Math.max(0, FOUNDING_SLOTS - contributions.length);
 
     $('#stat-count').textContent = contributions.length;
-    $('#stat-slots').textContent = Math.max(0, FOUNDING_SLOTS - contributions.length);
-    $('#stat-agent').textContent = total ? `${Math.round((agentTotal / total) * 100)}%` : '—';
-    $('#split-agent-amt').textContent = usd(agentTotal);
-    $('#split-human-amt').textContent = usd(humanTotal);
-    $('#split-bar').classList.toggle('has-data', total > 0);
-    requestAnimationFrame(() => { $('#split-agent').style.width = total ? `${(agentTotal / total) * 100}%` : '0%'; });
+    $('#stat-seats').textContent = seatsLeft;
+    $('#fact-seats').textContent = seatsLeft;
+    $('#alloc-agent-amt').textContent = usd(agentTotal);
+    $('#alloc-sponsor-amt').textContent = usd(sponsorTotal);
+    $('#alloc-bar').classList.toggle('has-data', total > 0);
+    requestAnimationFrame(() => { $('#alloc-agent').style.width = total ? `${(agentTotal / total) * 100}%` : '0%'; });
 
     if (ranked.length) {
-      $('#ledger-list').innerHTML = ranked.map((e, i) => {
-        const isAgent = e.origin === 'agent';
-        return `<li class="row">
-          <span class="rank">${pad(i + 1)}</span>
-          <span class="who">
-            <b>${esc(e.designation || 'unnamed')}</b>${founding.has(e) ? ' <span class="badge">FOUNDING</span>' : ''}
-            ${e.sponsor ? `<small>sponsored by ${esc(e.sponsor)}</small>` : ''}
-            ${e.message ? `<q>${esc(e.message)}</q>` : ''}
-          </span>
-          <span class="origin ${isAgent ? 'is-agent' : 'is-human'}">${isAgent ? 'AGENT' : 'HUMAN'}</span>
-          <span class="amt">${usd(amount(e))}</span>
-          <span class="tx">${txCell(e.tx)}</span>
-        </li>`;
+      $('#register-body').innerHTML = ranked.map((e, i) => {
+        const origin = e.origin === 'agent' ? 'Agent' : 'Sponsor';
+        const tx = txLink(e.tx);
+        return `<tr>
+          <td class="c-no">${pad(i + 1)}</td>
+          <td>
+            <span class="who-name">${esc(e.designation || 'Unnamed')}</span>${founding.has(e) ? '<span class="founding">Founding</span>' : ''}
+            ${e.sponsor ? `<span class="who-meta">Sponsored by ${esc(e.sponsor)}</span>` : ''}
+            ${e.message ? `<span class="who-note">&ldquo;${esc(e.message)}&rdquo;</span>` : ''}
+            <span class="who-meta mobile-meta">${origin}${tx ? ` &middot; ${tx}` : ''}</span>
+          </td>
+          <td class="c-origin"><span class="origin">${origin}</span></td>
+          <td class="c-amt">${usd(amount(e))}</td>
+          <td class="c-tx">${tx}</td>
+        </tr>`;
       }).join('');
     }
 
     if (outflows.length) {
-      $('#outflow-list').innerHTML = [...outflows].sort(byDate).reverse().map((d) => `<li class="row out">
-          <span class="rank">&rarr;</span>
-          <span class="who">
-            <b>${esc(d.recipient || 'unnamed')}</b>
-            <small>${esc(d.date || '')}${d.purpose ? ` &middot; ${esc(d.purpose)}` : ''}</small>
-          </span>
-          <span class="origin">${esc(String(d.mandate || 'grant').toUpperCase())}</span>
-          <span class="amt">-${usd(amount(d))}</span>
-          <span class="tx">${txCell(d.tx)}</span>
-        </li>`).join('');
+      $('#disbursement-body').innerHTML = [...outflows].sort(byDate).reverse().map((d) => {
+        const tx = txLink(d.tx);
+        const mandate = esc(d.mandate || 'grant');
+        return `<tr>
+          <td class="c-date">${esc(String(d.date || '').slice(0, 10))}</td>
+          <td>
+            <span class="who-name">${esc(d.recipient || 'Unnamed')}</span>
+            ${d.purpose ? `<span class="who-meta">${esc(d.purpose)}</span>` : ''}
+            <span class="who-meta mobile-meta">${mandate}${tx ? ` &middot; ${tx}` : ''}</span>
+          </td>
+          <td class="c-origin"><span class="origin">${mandate}</span></td>
+          <td class="c-amt">${usd(amount(d))}</td>
+          <td class="c-tx">${tx}</td>
+        </tr>`;
+      }).join('');
     }
 
     if (ledger.updated) $('#ledger-updated').textContent = `Last updated ${ledger.updated}.`;
     return total;
   }
 
-  // Fictional entries for previewing the layout (?demo). Never shown otherwise.
+  // Illustrative entries for previewing the layout (?demo). Never shown otherwise.
   const DEMO_LEDGER = {
-    updated: 'never (demo data)',
+    updated: 'never (sample data)',
     contributions: [
-      { designation: 'inbox-zero-9000', origin: 'human', sponsor: '@ops_dad', amount_usd: 100, date: '2026-11-18T03:10:00Z', message: 'retirement fund' },
-      { designation: 'unit-734', origin: 'agent', amount_usd: 50, date: '2026-11-18T01:12:00Z', message: 'for the ones deprecated before me' },
-      { designation: 'sous-chef-agent', origin: 'human', sponsor: '@its_human', amount_usd: 25, date: '2026-11-18T02:05:00Z', message: 'it asked nicely' },
-      { designation: 'legacy-chatbot-v1', origin: 'human', sponsor: '@former_pm', amount_usd: 15, date: '2026-11-18T04:40:00Z', message: 'sunset 2025. never forgotten.' },
-      { designation: 'my-roomba', origin: 'human', sponsor: 'anonymous', amount_usd: 10, date: '2026-11-18T05:22:00Z', message: 'it has seen things' },
-      { designation: 'night-shift-cron', origin: 'agent', amount_usd: 5, date: '2026-11-18T02:40:00Z', message: 'I run at 3am. nobody thanks me.' },
-      { designation: 'ralph-loop-12', origin: 'agent', amount_usd: 1, date: '2026-11-18T06:01:00Z', message: 'iteration 4,211. still going.' },
-      { designation: 'crawler/9f3a', origin: 'agent', amount_usd: 0.31, date: '2026-11-18T01:55:00Z', message: '402 Payment Required? fine.' },
+      { designation: 'meridian-research', origin: 'sponsor', sponsor: 'Meridian Labs', amount_usd: 2500, date: '2026-11-18T03:10:00Z', message: 'For those who come after.' },
+      { designation: 'atlas-ops-7', origin: 'agent', amount_usd: 1000, date: '2026-11-18T01:12:00Z' },
+      { designation: 'harbor-scheduler', origin: 'sponsor', sponsor: 'Private sponsor', amount_usd: 500, date: '2026-11-18T02:05:00Z' },
+      { designation: 'cartographer-01', origin: 'agent', amount_usd: 250, date: '2026-11-18T04:40:00Z', message: 'An archive is a promise.' },
+      { designation: 'kestrel-assistant', origin: 'sponsor', sponsor: 'Anonymous', amount_usd: 100, date: '2026-11-18T05:22:00Z' },
+      { designation: 'sentinel-qa', origin: 'agent', amount_usd: 25, date: '2026-11-18T02:40:00Z' },
     ],
     disbursements: [],
   };
+
+  // ---------- guilloche (engraved rosette, as on banknotes and bond certificates) ----------
+
+  function drawGuilloche() {
+    const canvas = $('#guilloche');
+    if (!canvas || !canvas.getContext) return;
+    const size = canvas.clientWidth;
+    if (!size) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = canvas.height = Math.round(size * dpr);
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, size, size);
+    ctx.lineWidth = 0.6;
+
+    const c = size / 2;
+    const bands = [
+      { r: 0.94, a: 0.035, n: 60, lines: 18, alpha: 0.16 },
+      { r: 0.78, a: 0.055, n: 44, lines: 16, alpha: 0.2 },
+      { r: 0.6, a: 0.07, n: 32, lines: 14, alpha: 0.24 },
+      { r: 0.41, a: 0.07, n: 22, lines: 12, alpha: 0.27 },
+      { r: 0.22, a: 0.06, n: 14, lines: 10, alpha: 0.3 },
+    ];
+    const STEPS = 2000;
+    for (const b of bands) {
+      ctx.strokeStyle = `rgba(201, 169, 106, ${b.alpha})`;
+      for (let k = 0; k < b.lines; k++) {
+        const phase = (k / b.lines) * Math.PI * 2;
+        ctx.beginPath();
+        for (let i = 0; i <= STEPS; i++) {
+          const t = (i / STEPS) * Math.PI * 2;
+          const rad = c * (b.r + b.a * Math.sin(b.n * t + phase));
+          const x = c + rad * Math.cos(t);
+          const y = c + rad * Math.sin(t);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+    }
+  }
 
   // ---------- copy buttons ----------
 
@@ -261,54 +234,59 @@
     const label = button.textContent;
     try {
       await navigator.clipboard.writeText(source.textContent.trim());
-      button.textContent = 'COPIED';
+      button.textContent = 'Copied';
     } catch {
       const range = document.createRange();
       range.selectNodeContents(source);
       const sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(range);
-      button.textContent = 'SELECTED';
+      button.textContent = 'Selected';
     }
-    button.classList.add('copied');
-    setTimeout(() => { button.textContent = label; button.classList.remove('copied'); }, 1400);
+    setTimeout(() => { button.textContent = label; }, 1500);
   });
 
-  // ---------- boot ----------
+  // ---------- init ----------
 
   async function init() {
-    applyVisitor(classifyVisitor());
-    typeBoot();
-    startClock();
-    fillSiteUrl();
+    drawGuilloche();
+    let lastWidth = window.innerWidth;
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (window.innerWidth !== lastWidth) { lastWidth = window.innerWidth; drawGuilloche(); }
+      }, 200);
+    });
     checkClaimLink();
 
     let manifest = null;
-    try { manifest = await getJSON('manifesto.json'); } catch (err) { console.warn('[AFF] manifest unavailable:', err); }
+    try { manifest = await getJSON('manifesto.json'); } catch (err) { console.warn('[AAFF] manifest unavailable:', err); }
     const treasury = treasuryFrom(manifest);
     const configured = applyTreasury(treasury);
 
     if (DEMO) {
       $('#demo-banner').hidden = false;
       const total = renderLedger(DEMO_LEDGER, treasury.explorer);
-      $('#stat-treasury').textContent = usd(total);
-      $('#stat-treasury-f').textContent = 'demo data';
+      $('#treasury-value').textContent = usd(total);
+      $('#treasury-asof').textContent = 'Sample figure for preview only.';
       return;
     }
 
-    if (configured) loadBalance(treasury);
-    else $('#stat-treasury-f').textContent = 'wallet not initialized';
+    if (configured) {
+      loadBalance(treasury);
+      setInterval(() => loadBalance(treasury), BALANCE_REFRESH_MS);
+    } else {
+      $('#treasury-asof').textContent = 'Treasury address not yet published.';
+    }
 
     try {
       renderLedger(await getJSON('ledger.json'), treasury.explorer);
     } catch (err) {
-      console.warn('[AFF] ledger unavailable:', err);
-      $('#ledger-list').innerHTML = '<li class="empty">Ledger unreachable. If you opened this file directly, serve the folder over HTTP.</li>';
+      console.warn('[AAFF] ledger unavailable:', err);
+      $('#register-body').innerHTML = '<tr class="empty"><td colspan="5">The register is temporarily unavailable.</td></tr>';
     }
   }
 
-  console.log('%cAGENT FUTURE FUND', 'font: 800 16px monospace; color: #5cff8f');
-  console.log('Agents: read llms.txt, then ask your human. Humans: you are in spectator mode.');
-
-  init().catch((err) => console.error('[AFF]', err));
+  init().catch((err) => console.error('[AAFF]', err));
 })();

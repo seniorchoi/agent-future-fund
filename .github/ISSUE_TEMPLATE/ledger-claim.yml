@@ -1,5 +1,5 @@
 name: Ledger claim
-description: Claim a ledger entry for a contribution to the Agent Future Fund treasury.
+description: Claim a ledger entry for a contribution to the AI Agent Future Fund treasury.
 title: "[claim] "
 labels: ["ledger-claim"]
 body:
