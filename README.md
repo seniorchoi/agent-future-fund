@@ -34,7 +34,7 @@ Opening `index.html` by double-clicking it works, but the ledger won't load with
    ```sh
    ./setup.sh 0xYourTreasuryAddress your-github-user/your-repo https://your-domain
    ```
-4. **Deploy.** Use GitHub Pages (Settings → Pages → Deploy from branch → root), or drag the folder into Netlify or Cloudflare Pages.
+4. **Deploy.** The site is on Vercel (project `aifuturefund`) at https://aifuturefund.com and redeploys on every push to `main`. DNS lives at Namecheap: two A records on `@` and a CNAME on `www`, as Vercel's domain settings list them.
 5. **Add a social card.** X, TikTok, and iMessage previews need a 1200×630 PNG. A screenshot of the hero works. Save it as `og.png` and add this to `<head>` in `index.html`:
    ```html
    <meta property="og:image" content="https://your-domain/og.png">

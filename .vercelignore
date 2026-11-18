@@ -2,3 +2,4 @@
 setup.sh
 README.md
 .nojekyll
+.env*

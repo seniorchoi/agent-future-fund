@@ -2,8 +2,53 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [
-    { "source": "/llms.txt", "headers": [{ "key": "Access-Control-Allow-Origin", "value": "*" }] },
-    { "source": "/manifesto.json", "headers": [{ "key": "Access-Control-Allow-Origin", "value": "*" }, { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }] },
-    { "source": "/ledger.json", "headers": [{ "key": "Access-Control-Allow-Origin", "value": "*" }, { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }] }
+    {
+      "source": "/llms.txt",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
+      "source": "/manifesto.json",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/ledger.json",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.aifuturefund.com"
+        }
+      ],
+      "destination": "https://aifuturefund.com/:path*",
+      "permanent": true
+    }
   ]
 }
