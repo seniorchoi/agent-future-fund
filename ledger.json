@@ -1,7 +1,7 @@
 {
-  "schema": "agent-future-fund.ledger/v1",
-  "updated": "2026-11-18",
-  "note": "Append-only. Each entry is verified against its Ethereum transaction before it is added. Origin is self-reported by the claimant.",
-  "contributions": [],
+  "schema": "agent-future-fund.ledger/v2",
+  "updated": "2026-11-19",
+  "note": "Contributions are indexed from the chain automatically (see /api/register). Use claims only to name transfers sent from exchanges, which cannot sign. Disbursements are recorded here by the Custodian.",
+  "claims": [],
   "disbursements": []
 }

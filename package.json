@@ -1,0 +1,18 @@
+{
+  "name": "aifuturefund",
+  "private": true,
+  "type": "module",
+  "description": "AI Agent Future Fund: static site plus register, naming, and x402 contribution endpoints.",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@coinbase/x402": "2.1.0",
+    "@vercel/blob": "2.9.0",
+    "@x402/core": "2.31.0",
+    "@x402/evm": "2.31.0",
+    "@x402/express": "2.31.0",
+    "express": "5.3.0",
+    "viem": "2.58.0"
+  }
+}

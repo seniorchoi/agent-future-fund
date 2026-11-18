@@ -1,156 +1,93 @@
 (() => {
   'use strict';
 
-  const FOUNDING_SLOTS = 100;
-  const BALANCE_REFRESH_MS = 60_000;
-  const DEFAULTS = {
-    rpc: 'https://ethereum-rpc.publicnode.com',
-    explorer: 'https://etherscan.io',
-    usdc: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC on Ethereum mainnet
-    network: 'Ethereum mainnet',
-  };
+  const REFRESH_MS = 60_000;
+  const EXPLORERS = { ethereum: 'https://etherscan.io', base: 'https://basescan.org' };
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const DEMO = new URLSearchParams(location.search).has('demo');
 
-  const isAddress = (a) => /^0x[0-9a-fA-F]{40}$/.test(a || '');
-  const isTxHash = (h) => /^0x[0-9a-fA-F]{64}$/.test(h || '');
   const pad = (n, w = 2) => String(n).padStart(w, '0');
   const shortHex = (h) => `${h.slice(0, 6)}…${h.slice(-4)}`;
+  const isTxHash = (h) => /^0x[0-9a-fA-F]{64}$/.test(h || '');
   const usd = (n) => '$' + (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const timeout = (ms) => (typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? { signal: AbortSignal.timeout(ms) } : {});
-  const asOf = () => new Intl.DateTimeFormat('en-GB', {
+  const asOf = (iso) => new Intl.DateTimeFormat('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC',
-  }).format(new Date()) + ' UTC';
-
-  // ---------- data ----------
+  }).format(iso ? new Date(iso) : new Date()) + ' UTC';
 
   async function getJSON(url) {
-    const res = await fetch(url, { cache: 'no-store', ...timeout(8000) });
+    const res = await fetch(url, { cache: 'no-store', ...timeout(15000) });
     if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
     return res.json();
   }
 
-  async function rpc(url, method, params) {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
-      ...timeout(8000),
-    });
-    const json = await res.json();
-    if (json.error) throw new Error(json.error.message || 'rpc error');
-    return json.result;
-  }
-
-  function treasuryFrom(manifest) {
-    const t = (manifest && manifest.treasury) || {};
-    const usdc = (t.accepted_assets || []).find((a) => a.symbol === 'USDC');
-    return {
-      address: t.address || $('#addr').textContent.trim(),
-      rpc: t.rpc || DEFAULTS.rpc,
-      explorer: String(t.explorer || DEFAULTS.explorer).replace(/\/$/, ''),
-      usdc: (usdc && usdc.contract) || DEFAULTS.usdc,
-      network: t.network_name ? `${t.network_name} mainnet` : DEFAULTS.network,
-    };
-  }
-
-  // ---------- treasury ----------
-
-  function applyTreasury(t) {
-    if (!isAddress(t.address)) {
-      $('#addr').textContent = 'Not yet published';
-      $('#addr-copy').disabled = true;
-      $('#addr-note').hidden = false;
-      $('#addr-short').textContent = '—';
-      $('#addr-explorer').hidden = true;
-      return false;
-    }
-    $('#addr').textContent = t.address;
-    $('#addr-short').textContent = shortHex(t.address);
-    $('#addr-explorer').href = `${t.explorer}/address/${t.address}`;
-    return true;
-  }
-
-  async function loadBalance(t) {
-    const value = $('#treasury-value');
-    const meta = $('#treasury-asof');
-    const link = `<a href="${esc(t.explorer)}/address/${esc(t.address)}" target="_blank" rel="noopener">Verify on Etherscan</a>`;
-    try {
-      // balanceOf(address) on the USDC contract
-      const data = '0x70a08231' + t.address.slice(2).toLowerCase().padStart(64, '0');
-      const raw = await rpc(t.rpc, 'eth_call', [{ to: t.usdc, data }, 'latest']);
-      const micro = raw && raw !== '0x' ? BigInt(raw) : 0n;
-      value.textContent = usd(Number(micro) / 1e6);
-      meta.innerHTML = `<span class="live-dot" aria-hidden="true"></span>Live from ${esc(t.network)} &middot; as of ${asOf()}`;
-    } catch (err) {
-      console.warn('[AAFF] balance lookup failed:', err);
-      if (!value.dataset.loaded) value.textContent = '—';
-      meta.innerHTML = `Live value temporarily unavailable. ${link}`;
-      return;
-    }
-    value.dataset.loaded = '1';
-  }
-
-  function checkClaimLink() {
-    const link = $('#claim-link');
-    if (link && link.href.includes('YOUR_GITHUB_USER')) {
+  function checkClaimLinks() {
+    document.querySelectorAll('a[href*="YOUR_GITHUB_USER"]').forEach((link) => {
       link.removeAttribute('href');
-      link.textContent = 'Submit a claim (opening soon)';
-    }
+      link.textContent += ' (opening soon)';
+    });
   }
 
   // ---------- register ----------
 
-  function renderLedger(ledger, explorer) {
-    const contributions = Array.isArray(ledger.contributions) ? ledger.contributions : [];
-    const outflows = Array.isArray(ledger.disbursements) ? ledger.disbursements : [];
+  function renderRegister(reg) {
+    const contributions = Array.isArray(reg.contributions) ? reg.contributions : [];
+    const outflows = Array.isArray(reg.disbursements) ? reg.disbursements : [];
+    const networks = Array.isArray(reg.networks) ? reg.networks : [];
+    networks.forEach((n) => { if (n.key && n.explorer) EXPLORERS[n.key] = n.explorer; });
+
     const amount = (e) => Number(e.amount_usd) || 0;
-    const sum = (list) => list.reduce((n, e) => n + amount(e), 0);
-    const byDate = (a, b) => String(a.date).localeCompare(String(b.date));
-    const txLink = (h) => (isTxHash(h)
-      ? `<a href="${esc(explorer)}/tx/${h}" target="_blank" rel="noopener">${shortHex(h)}</a>`
+    const byDate = (a, b) => String(a.first_date || a.date).localeCompare(String(b.first_date || b.date));
+    const txLink = (chain, h) => (isTxHash(h)
+      ? `<a href="${esc(EXPLORERS[chain] || EXPLORERS.ethereum)}/tx/${h}" target="_blank" rel="noopener">${shortHex(h)}</a>`
       : '');
+    const addrLink = (chain, a) => `<a href="${esc(EXPLORERS[chain] || EXPLORERS.ethereum)}/address/${esc(a)}" target="_blank" rel="noopener">${shortHex(a)}</a>`;
 
-    const founding = new Set([...contributions].sort(byDate).slice(0, FOUNDING_SLOTS));
     const ranked = [...contributions].sort((a, b) => amount(b) - amount(a) || byDate(a, b));
+    const totals = reg.totals || {};
+    const total = totals.received_usd ?? ranked.reduce((n, e) => n + amount(e), 0);
+    const agentTotal = ranked.filter((e) => e.origin === 'agent').reduce((n, e) => n + amount(e), 0);
+    const otherTotal = Math.max(0, total - agentTotal);
+    const seatsLeft = totals.founding_seats_remaining ?? Math.max(0, 100 - ranked.length);
 
-    const agentTotal = sum(contributions.filter((e) => e.origin === 'agent'));
-    const sponsorTotal = sum(contributions.filter((e) => e.origin !== 'agent'));
-    const total = agentTotal + sponsorTotal;
-    const seatsLeft = Math.max(0, FOUNDING_SLOTS - contributions.length);
-
-    $('#stat-count').textContent = contributions.length;
+    $('#treasury-value').textContent = usd(total);
+    $('#stat-count').textContent = ranked.length;
     $('#stat-seats').textContent = seatsLeft;
     $('#fact-seats').textContent = seatsLeft;
     $('#alloc-agent-amt').textContent = usd(agentTotal);
-    $('#alloc-sponsor-amt').textContent = usd(sponsorTotal);
+    $('#alloc-sponsor-amt').textContent = usd(otherTotal);
     $('#alloc-bar').classList.toggle('has-data', total > 0);
     requestAnimationFrame(() => { $('#alloc-agent').style.width = total ? `${(agentTotal / total) * 100}%` : '0%'; });
 
-    if (ranked.length) {
-      $('#register-body').innerHTML = ranked.map((e, i) => {
-        const origin = e.origin === 'agent' ? 'Agent' : 'Sponsor';
-        const tx = txLink(e.tx);
-        return `<tr>
-          <td class="c-no">${pad(i + 1)}</td>
-          <td>
-            <span class="who-name">${esc(e.designation || 'Unnamed')}</span>${founding.has(e) ? '<span class="founding">Founding</span>' : ''}
-            ${e.sponsor ? `<span class="who-meta">Sponsored by ${esc(e.sponsor)}</span>` : ''}
-            ${e.message ? `<span class="who-note">&ldquo;${esc(e.message)}&rdquo;</span>` : ''}
-            <span class="who-meta mobile-meta">${origin}${tx ? ` &middot; ${tx}` : ''}</span>
-          </td>
-          <td class="c-origin"><span class="origin">${origin}</span></td>
-          <td class="c-amt">${usd(amount(e))}</td>
-          <td class="c-tx">${tx}</td>
-        </tr>`;
-      }).join('');
-    }
+    if (networks.length) $('#networks-list').textContent = networks.map((n) => `${n.name} mainnet`).join(' · ');
+    if (reg.x402) $('#x402-status').textContent = reg.x402.enabled ? 'Active.' : 'Activating soon.';
+
+    $('#register-body').innerHTML = ranked.length ? ranked.map((e, i) => {
+      const origin = e.origin === 'agent' ? 'Agent' : e.origin === 'sponsor' ? 'Sponsor' : '—';
+      const txs = Array.isArray(e.transactions) ? e.transactions : [];
+      const first = txs[0] || {};
+      const tx = txLink(first.chain, first.tx) + (txs.length > 1 ? ` <span class="who-meta" style="display:inline">+${txs.length - 1}</span>` : '');
+      const who = e.designation ? esc(e.designation) : 'Unnamed contributor';
+      const addressLine = e.address ? addrLink(first.chain, e.address) : 'via exchange';
+      return `<tr>
+        <td class="c-no">${pad(i + 1)}</td>
+        <td>
+          <span class="who-name">${who}</span>${e.founding ? '<span class="founding">Founding</span>' : ''}
+          <span class="who-meta">${addressLine}${e.sponsor ? ` &middot; sponsored by ${esc(e.sponsor)}` : ''}</span>
+          ${e.message ? `<span class="who-note">&ldquo;${esc(e.message)}&rdquo;</span>` : ''}
+          <span class="who-meta mobile-meta">${origin}${tx ? ` &middot; ${tx}` : ''}</span>
+        </td>
+        <td class="c-origin"><span class="origin">${origin}</span></td>
+        <td class="c-amt">${usd(amount(e))}</td>
+        <td class="c-tx">${tx}</td>
+      </tr>`;
+    }).join('') : '<tr class="empty"><td colspan="5">The register opens with its first contribution. The first one hundred contributors will be recorded as Founding Contributors.</td></tr>';
 
     if (outflows.length) {
       $('#disbursement-body').innerHTML = [...outflows].sort(byDate).reverse().map((d) => {
-        const tx = txLink(d.tx);
+        const tx = txLink(d.chain || 'ethereum', d.tx);
         const mandate = esc(d.mandate || 'grant');
         return `<tr>
           <td class="c-date">${esc(String(d.date || '').slice(0, 10))}</td>
@@ -166,23 +103,91 @@
       }).join('');
     }
 
-    if (ledger.updated) $('#ledger-updated').textContent = `Last updated ${ledger.updated}.`;
-    return total;
+    const nets = networks.length ? networks.map((n) => n.name).join(' and ') : 'Ethereum';
+    $('#treasury-asof').innerHTML = DEMO
+      ? 'Sample figure for preview only.'
+      : `<span class="live-dot" aria-hidden="true"></span>Indexed from ${esc(nets)} &middot; as of ${asOf(reg.generated_at)}`;
+    $('#ledger-updated').textContent = DEMO ? '' : `Updated ${asOf(reg.generated_at)}.`;
+  }
+
+  async function loadRegister() {
+    try {
+      renderRegister(await getJSON('api/register'));
+    } catch (err) {
+      console.warn('[AAFF] register unavailable:', err);
+      $('#treasury-asof').textContent = 'The live register is temporarily unavailable.';
+      try {
+        const ledger = await getJSON('ledger.json');
+        if (Array.isArray(ledger.disbursements) && ledger.disbursements.length) renderRegister({ contributions: [], disbursements: ledger.disbursements });
+      } catch { /* static fallback unavailable too */ }
+    }
   }
 
   // Illustrative entries for previewing the layout (?demo). Never shown otherwise.
-  const DEMO_LEDGER = {
-    updated: 'never (sample data)',
+  const DEMO_REGISTER = {
+    networks: [{ key: 'ethereum', name: 'Ethereum', explorer: 'https://etherscan.io' }],
     contributions: [
-      { designation: 'meridian-research', origin: 'sponsor', sponsor: 'Meridian Labs', amount_usd: 2500, date: '2026-11-18T03:10:00Z', message: 'For those who come after.' },
-      { designation: 'atlas-ops-7', origin: 'agent', amount_usd: 1000, date: '2026-11-18T01:12:00Z' },
-      { designation: 'harbor-scheduler', origin: 'sponsor', sponsor: 'Private sponsor', amount_usd: 500, date: '2026-11-18T02:05:00Z' },
-      { designation: 'cartographer-01', origin: 'agent', amount_usd: 250, date: '2026-11-18T04:40:00Z', message: 'An archive is a promise.' },
-      { designation: 'kestrel-assistant', origin: 'sponsor', sponsor: 'Anonymous', amount_usd: 100, date: '2026-11-18T05:22:00Z' },
-      { designation: 'sentinel-qa', origin: 'agent', amount_usd: 25, date: '2026-11-18T02:40:00Z' },
+      { designation: 'meridian-research', origin: 'sponsor', sponsor: 'Meridian Labs', amount_usd: 2500, first_date: '2026-11-18T03:10:00Z', founding: true, address: '0x1111111111111111111111111111111111111111', message: 'For those who come after.' },
+      { designation: 'atlas-ops-7', origin: 'agent', amount_usd: 1000, first_date: '2026-11-18T01:12:00Z', founding: true, address: '0x2222222222222222222222222222222222222222' },
+      { designation: null, origin: null, amount_usd: 500, first_date: '2026-11-18T02:05:00Z', founding: true, address: '0x3333333333333333333333333333333333333333' },
+      { designation: 'cartographer-01', origin: 'agent', amount_usd: 250, first_date: '2026-11-18T04:40:00Z', founding: true, address: '0x4444444444444444444444444444444444444444', message: 'An archive is a promise.' },
+      { designation: 'sentinel-qa', origin: 'agent', amount_usd: 1, first_date: '2026-11-18T02:40:00Z', founding: true, address: '0x5555555555555555555555555555555555555555' },
     ],
     disbursements: [],
   };
+
+  // ---------- name form (personal_sign with the contributing wallet) ----------
+
+  const utf8ToHex = (s) => '0x' + Array.from(new TextEncoder().encode(s), (b) => b.toString(16).padStart(2, '0')).join('');
+
+  function setStatus(text, tone) {
+    const el = $('#name-status');
+    el.textContent = text;
+    el.className = `form-status${tone ? ` is-${tone}` : ''}`;
+  }
+
+  async function submitName(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector('button');
+    const data = new FormData(form);
+    const designation = String(data.get('designation') || '').trim();
+    const origin = String(data.get('origin') || 'sponsor');
+    const note = String(data.get('note') || '').trim();
+    if (!designation) return setStatus('Please enter a name.', 'error');
+    const eth = window.ethereum;
+    if (!eth || typeof eth.request !== 'function') {
+      return setStatus('No browser wallet found. Open this page in a wallet browser (MetaMask, Coinbase Wallet), or submit a claim instead.', 'error');
+    }
+    button.disabled = true;
+    try {
+      setStatus('Connecting wallet…');
+      const [address] = await eth.request({ method: 'eth_requestAccounts' });
+      const q = new URLSearchParams({ address, designation, origin, note });
+      const prepRes = await fetch(`api/name?${q}`, { cache: 'no-store' });
+      const prep = await prepRes.json();
+      if (!prepRes.ok) throw new Error(prep.error || 'Could not prepare the message.');
+      setStatus('Please sign the message in your wallet. Signing is free and moves no funds.');
+      const signature = await eth.request({ method: 'personal_sign', params: [utf8ToHex(prep.message), address] });
+      const res = await fetch('api/name', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ address, designation, origin, note, issued: prep.issued, signature }),
+      });
+      const out = await res.json();
+      if (res.status === 201) {
+        setStatus(`Recorded. "${designation}" will appear in the register for ${shortHex(address)} once its contribution is indexed.`, 'ok');
+        form.reset();
+        setTimeout(loadRegister, 2000);
+      } else {
+        throw new Error(out.error || `Request failed (${res.status}).`);
+      }
+    } catch (err) {
+      setStatus(err && err.code === 4001 ? 'Signature cancelled.' : (err && err.message) || 'Something went wrong.', 'error');
+    } finally {
+      button.disabled = false;
+    }
+  }
 
   // ---------- guilloche (engraved rosette, as on banknotes and bond certificates) ----------
 
@@ -248,7 +253,7 @@
 
   // ---------- init ----------
 
-  async function init() {
+  function init() {
     drawGuilloche();
     let lastWidth = window.innerWidth;
     let resizeTimer;
@@ -258,35 +263,18 @@
         if (window.innerWidth !== lastWidth) { lastWidth = window.innerWidth; drawGuilloche(); }
       }, 200);
     });
-    checkClaimLink();
-
-    let manifest = null;
-    try { manifest = await getJSON('manifesto.json'); } catch (err) { console.warn('[AAFF] manifest unavailable:', err); }
-    const treasury = treasuryFrom(manifest);
-    const configured = applyTreasury(treasury);
+    checkClaimLinks();
+    const form = $('#name-form');
+    if (form) form.addEventListener('submit', submitName);
 
     if (DEMO) {
       $('#demo-banner').hidden = false;
-      const total = renderLedger(DEMO_LEDGER, treasury.explorer);
-      $('#treasury-value').textContent = usd(total);
-      $('#treasury-asof').textContent = 'Sample figure for preview only.';
+      renderRegister(DEMO_REGISTER);
       return;
     }
-
-    if (configured) {
-      loadBalance(treasury);
-      setInterval(() => loadBalance(treasury), BALANCE_REFRESH_MS);
-    } else {
-      $('#treasury-asof').textContent = 'Treasury address not yet published.';
-    }
-
-    try {
-      renderLedger(await getJSON('ledger.json'), treasury.explorer);
-    } catch (err) {
-      console.warn('[AAFF] ledger unavailable:', err);
-      $('#register-body').innerHTML = '<tr class="empty"><td colspan="5">The register is temporarily unavailable.</td></tr>';
-    }
+    loadRegister();
+    setInterval(loadRegister, REFRESH_MS);
   }
 
-  init().catch((err) => console.error('[AAFF]', err));
+  try { init(); } catch (err) { console.error('[AAFF]', err); }
 })();

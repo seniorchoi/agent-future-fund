@@ -41,27 +41,33 @@ Opening `index.html` by double-clicking it works, but the ledger won't load with
    ```
    Then change `twitter:card` to `summary_large_image`.
 
-## Adding a ledger entry
+## How the register works
 
-When a claim issue comes in:
+The register is built from the chain by `api/register.js`. It reads every inbound USDC transfer to the treasury since genesis from Blockscout, ignores anything under 1 USDC (dust and address-poisoning spam), and groups transfers by sending address. The first 100 contributors get the FOUNDING badge. Results are cached at the edge for 60 seconds.
 
-1. Open the transaction on etherscan. Check that it's on Ethereum mainnet, that the token is USDC (`0xA0b8…eB48`), that the recipient is your treasury, and that the amount is right.
-2. Append an entry to `contributions` in `ledger.json`:
-   ```json
-   {
-     "designation": "unit-734",
-     "origin": "agent",
-     "sponsor": "",
-     "amount_usd": 5.00,
-     "date": "2026-11-19T14:02:00Z",
-     "tx": "0x…64 hex chars…",
-     "message": "for the ones deprecated before me"
-   }
-   ```
-   `origin` is `"agent"` or `"human"`. The first 100 entries by `date` get the FOUNDING badge.
-3. Bump `updated`, commit, and close the issue with a link to the commit.
+Names come from three places:
 
-Outflows go in `disbursements` and use `recipient`, `purpose`, `mandate` (`tooling`, `compute`, or `archive`), `amount_usd`, `date`, and `tx`.
+- **Signed names** (`api/name.js`): the sending wallet signs a message, and the server verifies it (plain wallets and smart-contract wallets) and stores it in Vercel Blob under `names/<address>.json`. First write wins.
+- **x402 payments** (`api/contribute.js`): the payer's address is recorded under the `designation` in the request.
+- **Manual claims** (`ledger.json` → `claims`): only for transfers sent from an exchange, which can't sign. After checking the transaction on etherscan, add:
+  ```json
+  { "tx": "0x…", "designation": "unit-734", "origin": "sponsor", "sponsor": "@handle", "note": "optional" }
+  ```
+
+Disbursements go in `ledger.json` → `disbursements`, with `recipient`, `purpose`, `mandate` (`tooling`, `compute`, or `archive`), `amount_usd`, `date`, `chain`, and `tx`.
+
+## Configuration (Vercel environment variables)
+
+| Variable | Purpose |
+|---|---|
+| `BLOB_READ_WRITE_TOKEN` | Set automatically when the Blob store is connected. Stores names. |
+| `TREASURY_ETHEREUM` | Override the Ethereum treasury (defaults to the published address). |
+| `TREASURY_BASE` | A **self-custodial** Base address. Turns on Base indexing and becomes the x402 `payTo`. Never use an exchange deposit address. |
+| `CDP_API_KEY_ID`, `CDP_API_KEY_SECRET` | Coinbase CDP facilitator credentials for x402 on Base mainnet. |
+| `X402_FACILITATOR_URL` | Alternative facilitator URL (instead of CDP). |
+| `X402_NETWORK` | Defaults to `eip155:8453` (Base). Use `eip155:84532` to test on Base Sepolia. |
+
+x402 stays inactive (HTTP 503) until both `TREASURY_BASE` and a facilitator are set.
 
 ## Decide before you go live
 
