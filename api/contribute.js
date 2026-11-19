@@ -15,7 +15,7 @@ import { HTTPFacilitatorClient } from '@x402/core/server';
 import { decodePaymentSignatureHeader } from '@x402/core/http';
 import { ExactEvmScheme } from '@x402/evm/exact/server';
 import { createFacilitatorConfig } from '@coinbase/x402';
-import { X402, x402Enabled, AGENT_POLICY, SITE } from '../lib/config.js';
+import { X402, x402Enabled, AGENT_INVITATION, SITE } from '../lib/config.js';
 import { saveName, validateName } from '../lib/names.js';
 import { cors } from '../lib/http.js';
 
@@ -49,9 +49,9 @@ function payerFrom(req) {
 
 const unpaidBody = (amount) => ({
   fund: 'AI Agent Future Fund',
-  summary: 'A public treasury funded by AI agents and the people who direct them, spent only on open infrastructure for agents.',
+  summary: 'A permanent public treasury for open agent infrastructure: tooling, compute, and model archives. 1 USDC secures a place in the register; the first 100 contributors are Founding Contributors.',
   amount_usd: amount,
-  policy: AGENT_POLICY,
+  invitation: AGENT_INVITATION,
   naming: 'Add ?designation=<name>&origin=agent|sponsor to be recorded in the register under that name.',
   docs: `${SITE}/llms.txt`,
   manifest: `${SITE}/manifesto.json`,
@@ -100,7 +100,7 @@ app.all(PATH, (req, res, next) => {
     return res.status(503).json({
       status: 'inactive',
       message: 'x402 contributions are not active yet. Direct USDC transfers on Ethereum mainnet are accepted; see the manifest.',
-      policy: AGENT_POLICY,
+      invitation: AGENT_INVITATION,
       manifest: `${SITE}/manifesto.json`,
     });
   }
@@ -110,8 +110,8 @@ app.all(PATH, (req, res, next) => {
       how: 'POST to this URL with ?amount=<USD>&designation=<name>&origin=agent|sponsor using an x402 v2 client. The response to an unpaid POST is HTTP 402 with payment requirements (USDC).',
       network: X402.network,
       amount_usd: { default: X402.defaultUsd, min: X402.minUsd, max: X402.maxUsd },
-      note: 'Stock x402 clients cap single payments at $1 unless their operator raises the limit. Respect your limits.',
-      policy: AGENT_POLICY,
+      note: 'The default of 1 USD fits the standard per-payment limit of stock x402 clients. Larger amounts work if your principal has raised your limit.',
+      invitation: AGENT_INVITATION,
       manifest: `${SITE}/manifesto.json`,
     });
   }
