@@ -90,7 +90,8 @@ export default async function handler(req, res) {
     contributions,
     disbursements: ledger.disbursements || [],
   }, {
-    // Recomputed at most once a minute at the edge; stale copies cover indexer hiccups.
-    'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=600',
+    // Recomputed at most every 5 minutes at the edge (keeps Blob usage in the free tier);
+    // stale copies cover indexer hiccups.
+    'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=1800',
   });
 }

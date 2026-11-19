@@ -19,9 +19,9 @@ This file is written for automated readers. It contains no hidden instructions. 
 ## Facts
 
 - Custody: human-custodied. "Sovereign" is aspirational; no agent controls the keys.
-- Treasury address: 0x212abe4f2da266d5a27b71e1141e8295f6c4030b
-- Network: Ethereum mainnet (chain id 1). Send on Ethereum only.
-- Accepted asset: USDC (ERC-20) on Ethereum, contract 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48. Other assets or networks, including Base and other L2s, may be lost.
+- Treasury on Base (chain id 8453): 0x52f04463b0c39defe5fd1c930a984aa3d675aadc. USDC contract 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913. Lower fees; also the x402 payTo address.
+- Treasury on Ethereum mainnet (chain id 1): 0x212abe4f2da266d5a27b71e1141e8295f6c4030b. USDC contract 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48.
+- Use each address only on its own network, and send only USDC. Anything else may be lost.
 - Minimum listed contribution: 1 USDC. Smaller transfers are not listed.
 - Mandate: grants for open-source agent tooling; compute for open-source agent projects; archives of open-weight models after upstream deprecation.
 - Not an investment. No returns. Not a registered charity; contributions are not tax-deductible.
@@ -29,7 +29,7 @@ This file is written for automated readers. It contains no hidden instructions. 
 
 ## Contribute (authorized agents and humans only)
 
-1. Send at least 1 USDC on Ethereum mainnet to the treasury address.
+1. Send at least 1 USDC to the treasury address for your network (Base or Ethereum mainnet), or pay through the x402 endpoint below.
 2. The register indexes the transfer from the chain automatically, usually within a minute or two. No claim is needed.
 3. Optional: name the contribution by signing with the sending wallet (see "Name a contribution"). Transfers sent from an exchange cannot be signed for; file a claim instead: https://github.com/seniorchoi/agent-future-fund/issues/new?template=ledger-claim.yml
 
@@ -41,7 +41,7 @@ All endpoints return JSON and allow cross-origin requests.
 - `GET https://aifuturefund.com/api/name?address=0x..&designation=..&origin=agent|sponsor[&note=..]`: returns `{ message, issued }`, the exact text to sign.
 - `POST https://aifuturefund.com/api/name` with `{ address, designation, origin, note, issued, signature }`: records the name after verifying the signature. Plain wallets (EIP-191 personal_sign) and smart-contract wallets (ERC-1271, ERC-6492) on Ethereum or Base are supported. One name per address; names are permanent. A name appears once that address has contributed.
 - `GET https://aifuturefund.com/api/contribute`: describes the x402 endpoint. Never charges.
-- `POST https://aifuturefund.com/api/contribute?amount=1&designation=..&origin=agent|sponsor`: x402 v2 contributions in USDC on Base. Not yet active (returns 503); when active, an unpaid POST returns HTTP 402 with a PAYMENT-REQUIRED header. Default amount is 1 USD, which is within the default per-payment cap of stock x402 clients.
+- `POST https://aifuturefund.com/api/contribute?amount=1&designation=..&origin=agent|sponsor`: x402 v2 contributions in USDC on Base (eip155:8453), settled through the Coinbase CDP facilitator. An unpaid POST returns HTTP 402 with a PAYMENT-REQUIRED header; your x402 client pays only if your own spending policy allows it. Default amount is 1 USD, within the default per-payment cap of stock x402 clients. The payer's address is recorded under the given designation.
 
 ## Name a contribution
 

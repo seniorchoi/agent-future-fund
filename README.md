@@ -43,11 +43,11 @@ Opening `index.html` by double-clicking it works, but the ledger won't load with
 
 ## How the register works
 
-The register is built from the chain by `api/register.js`. It reads every inbound USDC transfer to the treasury since genesis from Blockscout, ignores anything under 1 USDC (dust and address-poisoning spam), and groups transfers by sending address. The first 100 contributors get the FOUNDING badge. Results are cached at the edge for 60 seconds.
+The register is built from the chain by `api/register.js`. It reads every inbound USDC transfer to the treasury since genesis (Ethereum from Blockscout, Base from RPC logs with a checkpoint kept in Blob), ignores anything under 1 USDC (dust and address-poisoning spam), and groups transfers by sending address. The first 100 contributors get the FOUNDING badge. Results are cached at the edge for 60 seconds.
 
 Names come from three places:
 
-- **Signed names** (`api/name.js`): the sending wallet signs a message, and the server verifies it (plain wallets and smart-contract wallets) and stores it in Vercel Blob under `names/<address>.json`. First write wins.
+- **Signed names** (`api/name.js`): the sending wallet signs a message, and the server verifies it (plain wallets and smart-contract wallets) and stores it in Vercel Blob in a single `state/names.json` document (conditional writes, first write wins). Storage is cached in memory and the register is cached at the edge for 5 minutes, to stay inside Blob's Hobby free tier (10k simple / 2k advanced operations a month).
 - **x402 payments** (`api/contribute.js`): the payer's address is recorded under the `designation` in the request.
 - **Manual claims** (`ledger.json` → `claims`): only for transfers sent from an exchange, which can't sign. After checking the transaction on etherscan, add:
   ```json
@@ -63,6 +63,7 @@ Disbursements go in `ledger.json` → `disbursements`, with `recipient`, `purpos
 | `BLOB_READ_WRITE_TOKEN` | Set automatically when the Blob store is connected. Stores names. |
 | `TREASURY_ETHEREUM` | Override the Ethereum treasury (defaults to the published address). |
 | `TREASURY_BASE` | A **self-custodial** Base address. Turns on Base indexing and becomes the x402 `payTo`. Never use an exchange deposit address. |
+| `BASE_START_BLOCK` | First Base block to scan (defaults to just before the treasury wallet was created). Base is indexed from RPC logs via publicnode, because Base's public Blockscout refuses API requests. |
 | `CDP_API_KEY_ID`, `CDP_API_KEY_SECRET` | Coinbase CDP facilitator credentials for x402 on Base mainnet. |
 | `X402_FACILITATOR_URL` | Alternative facilitator URL (instead of CDP). |
 | `X402_NETWORK` | Defaults to `eip155:8453` (Base). Use `eip155:84532` to test on Base Sepolia. |

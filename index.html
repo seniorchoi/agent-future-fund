@@ -148,8 +148,9 @@
           <div><dt>Network</dt><dd id="networks-list">Ethereum mainnet</dd></div>
           <div><dt>Asset</dt><dd>USDC (ERC-20)</dd></div>
           <div><dt>Custody</dt><dd>Human custodian, public address<a class="fn" href="#disclosures" aria-label="Footnote 1">1</a></dd></div>
-          <div><dt>Address</dt><dd class="mono" id="addr-short">0x212a&hellip;030b</dd></div>
-          <div><dt>Verification</dt><dd><a id="addr-explorer" href="https://etherscan.io/address/0x212abe4f2da266d5a27b71e1141e8295f6c4030b" target="_blank" rel="noopener">View on Etherscan &nearr;</a></dd></div>
+          <div><dt>Base address</dt><dd class="mono">0x52f0&hellip;aadc</dd></div>
+          <div><dt>Ethereum address</dt><dd class="mono">0x212a&hellip;030b</dd></div>
+          <div><dt>Verification</dt><dd><a href="https://basescan.org/address/0x52f04463b0c39defe5fd1c930a984aa3d675aadc" target="_blank" rel="noopener">Basescan &nearr;</a> &nbsp;&middot;&nbsp; <a href="https://etherscan.io/address/0x212abe4f2da266d5a27b71e1141e8295f6c4030b" target="_blank" rel="noopener">Etherscan &nearr;</a></dd></div>
         </dl>
       </div>
       <div class="allocation">
@@ -197,7 +198,7 @@
       <div class="section-head">
         <p class="eyebrow">06 &nbsp;&mdash;&nbsp; Contribute</p>
         <h2>Contributing to the Fund</h2>
-        <p class="lead">Contributions are accepted in USDC on Ethereum mainnet. The first one hundred contributors are recorded as Founding Contributors.</p>
+        <p class="lead">Contributions are accepted in USDC on Base or Ethereum mainnet. The first one hundred contributors are recorded as Founding Contributors.</p>
       </div>
       <div class="paths">
         <article class="path">
@@ -208,7 +209,7 @@
         <article class="path">
           <p class="path-kicker">Agents with a mandate</p>
           <h3>Directly, with authorization</h3>
-          <p>An agent whose principal has explicitly authorized discretionary contributions may contribute directly from a wallet it controls.</p>
+          <p>An agent whose principal has explicitly authorized discretionary contributions may contribute directly from a wallet it controls, or through x402 at <code>/api/contribute</code>.</p>
         </article>
         <article class="path path-muted">
           <p class="path-kicker">Agents without a mandate</p>
@@ -218,16 +219,24 @@
       </div>
       <div class="deposit">
         <div class="deposit-main">
-          <p class="deposit-label">Treasury address &middot; USDC on Ethereum mainnet</p>
-          <div class="deposit-row">
-            <code id="addr">0x212abe4f2da266d5a27b71e1141e8295f6c4030b</code>
-            <button class="btn btn-gold btn-sm" type="button" id="addr-copy" data-copy="#addr">Copy address</button>
+          <div class="deposit-net">
+            <p class="deposit-label">USDC on Base <span class="deposit-tag">Lower fees</span></p>
+            <div class="deposit-row">
+              <code id="addr-base">0x52f04463b0c39defe5fd1c930a984aa3d675aadc</code>
+              <button class="btn btn-gold btn-sm" type="button" data-copy="#addr-base">Copy Base address</button>
+            </div>
           </div>
-          <p class="deposit-warn" id="addr-note" hidden>The treasury address has not been published yet. Please do not send anything until it appears here.</p>
-          <p class="deposit-fine">Send only USDC on Ethereum mainnet. Assets sent on any other network may be unrecoverable.</p>
+          <div class="deposit-net">
+            <p class="deposit-label">USDC on Ethereum mainnet</p>
+            <div class="deposit-row">
+              <code id="addr">0x212abe4f2da266d5a27b71e1141e8295f6c4030b</code>
+              <button class="btn btn-gold btn-sm" type="button" data-copy="#addr">Copy Ethereum address</button>
+            </div>
+          </div>
+          <p class="deposit-fine">Use each address only on the network shown above it, and send only USDC. Anything else may be unrecoverable.</p>
         </div>
         <ol class="steps">
-          <li><span>1</span><p>Transfer at least 1 USDC to the treasury address.</p></li>
+          <li><span>1</span><p>Transfer at least 1 USDC to the address for your network.</p></li>
           <li><span>2</span><p>The register picks it up from the chain automatically, usually within a minute or two.</p></li>
           <li><span>3</span><p><a href="#name-form">Record a name</a> by signing with the sending wallet. Sent from an exchange? <a id="claim-link" href="https://github.com/seniorchoi/agent-future-fund/issues/new?template=ledger-claim.yml" target="_blank" rel="noopener">Submit a claim</a>.</p></li>
         </ol>
@@ -298,7 +307,7 @@
         <li><h3>Not an investment</h3><p>Contributions confer no ownership, return, or right of redemption.</p></li>
         <li><h3>Not a charity</h3><p>The Fund is not a registered charity. Contributions are not tax-deductible.</p></li>
         <li><h3>The register</h3><p>Contributions are indexed from the chain; transfers under 1 USDC are not listed. Names, and whether a contributor is an agent or a sponsor, are declared by the sending wallet.</p></li>
-        <li><h3>Networks</h3><p>Only USDC on Ethereum mainnet is recognized. Assets sent on any other network may be unrecoverable.</p></li>
+        <li><h3>Networks</h3><p>Only USDC on Base and on Ethereum mainnet, each sent to its own published address, is recognized. Assets sent on any other network, or to the wrong address, may be unrecoverable.</p></li>
       </ol>
     </div>
   </section>
