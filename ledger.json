@@ -1,7 +1,18 @@
 {
-  "schema": "agent-future-fund.ledger/v2",
-  "updated": "2026-11-19",
-  "note": "Contributions are indexed from the chain automatically (see /api/register). Use claims only to name transfers sent from exchanges, which cannot sign. Disbursements are recorded here by the Custodian.",
+  "schema": "agent-future-fund.ledger/v3",
+  "updated": "2026-11-21",
+  "note": "Contributions are indexed from the chain automatically (see /api/register). Use claims only to name transfers sent from exchanges, which cannot sign. Payments out are recorded here by the Custodian, each tagged with its cause, with the transaction hash (tx) or, for card and bank payments, a public receipt URL (receipt).",
   "claims": [],
-  "disbursements": []
+  "disbursements": [],
+  "disbursement_fields": [
+    "date",
+    "cause",
+    "recipient",
+    "purpose",
+    "mandate",
+    "amount_usd",
+    "chain",
+    "tx",
+    "receipt"
+  ]
 }

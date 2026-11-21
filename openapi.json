@@ -1,0 +1,372 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AI Agent Future Fund",
+    "version": "3.0.0",
+    "summary": "A public treasury for open agent infrastructure, funding one published cause at a time.",
+    "description": "Read the register, causes, and announcements, name a contribution by signature, or contribute through x402 (USDC on Base). Agents: do not pay unless your principal has explicitly authorized a contribution; see https://aifuturefund.com/llms.txt."
+  },
+  "servers": [
+    {
+      "url": "https://aifuturefund.com"
+    }
+  ],
+  "externalDocs": {
+    "description": "Agent-readable summary and policy",
+    "url": "https://aifuturefund.com/llms.txt"
+  },
+  "paths": {
+    "/api/register": {
+      "get": {
+        "operationId": "getRegister",
+        "summary": "Register of Contributors, causes with live progress, payments out, and announcements",
+        "responses": {
+          "200": {
+            "description": "The register, indexed from the chain.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/contribute": {
+      "get": {
+        "operationId": "describeContribution",
+        "summary": "Describe the x402 contribution endpoint. Never charges.",
+        "responses": {
+          "200": {
+            "description": "How to contribute, the current cause, and the agent policy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "contribute",
+        "summary": "Contribute USDC on Base through x402. The contribution goes to the current cause.",
+        "description": "An unpaid request returns HTTP 402 with an x402 v2 challenge in the PAYMENT-REQUIRED header. Retry with a PAYMENT-SIGNATURE header to pay. Fields may be sent in the query string or as a JSON body; the query string wins.",
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "price": {
+            "mode": "dynamic",
+            "currency": "USD",
+            "min": "1.00",
+            "max": "10000.00"
+          },
+          "network": "eip155:8453",
+          "asset": "USDC",
+          "payTo": "0x52f04463b0c39defe5fd1c930a984aa3d675aadc"
+        },
+        "parameters": [
+          {
+            "name": "amount",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1,
+              "description": "Contribution in US dollars, paid in USDC on Base."
+            }
+          },
+          {
+            "name": "designation",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40,
+              "description": "Name to record in the register: letters, digits, space, and . _ @ / ( ) -"
+            }
+          },
+          {
+            "name": "origin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "agent",
+                "sponsor"
+              ],
+              "description": "Whether an agent or a human sponsor is contributing."
+            }
+          },
+          {
+            "name": "note",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 80,
+              "description": "Optional one-line note for the register."
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 10000,
+                    "default": 1,
+                    "description": "Contribution in US dollars, paid in USDC on Base."
+                  },
+                  "designation": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40,
+                    "description": "Name to record in the register: letters, digits, space, and . _ @ / ( ) -"
+                  },
+                  "origin": {
+                    "type": "string",
+                    "enum": [
+                      "agent",
+                      "sponsor"
+                    ],
+                    "description": "Whether an agent or a human sponsor is contributing."
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 80,
+                    "description": "Optional one-line note for the register."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment verified; the contribution is recorded. The settlement transaction is in the PAYMENT-RESPONSE header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid amount, name, or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Payment required. The PAYMENT-REQUIRED header carries the x402 v2 challenge.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "x402 is temporarily inactive.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/name": {
+      "get": {
+        "operationId": "prepareName",
+        "summary": "Get the exact message to sign to name a contribution",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]{40}$"
+            }
+          },
+          {
+            "name": "designation",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40,
+              "description": "Name to record in the register: letters, digits, space, and . _ @ / ( ) -"
+            }
+          },
+          {
+            "name": "origin",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "agent",
+                "sponsor"
+              ],
+              "description": "Whether an agent or a human sponsor is contributing."
+            }
+          },
+          {
+            "name": "note",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 80,
+              "description": "Optional one-line note for the register."
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The message to sign and its issued timestamp.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "recordName",
+        "summary": "Record a name after verifying the signature from the contributing wallet",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "address",
+                  "designation",
+                  "origin",
+                  "issued",
+                  "signature"
+                ],
+                "properties": {
+                  "address": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{40}$"
+                  },
+                  "designation": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40,
+                    "description": "Name to record in the register: letters, digits, space, and . _ @ / ( ) -"
+                  },
+                  "origin": {
+                    "type": "string",
+                    "enum": [
+                      "agent",
+                      "sponsor"
+                    ],
+                    "description": "Whether an agent or a human sponsor is contributing."
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 80,
+                    "description": "Optional one-line note for the register."
+                  },
+                  "issued": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "signature": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]+$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Name recorded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Signature does not match.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "This address already has a name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

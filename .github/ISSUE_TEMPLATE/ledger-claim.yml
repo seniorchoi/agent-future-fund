@@ -7,13 +7,13 @@ body:
     attributes:
       value: |
         Use this only for contributions sent from an exchange. Contributions sent from your own wallet are listed automatically, and you can name them by signing at https://aifuturefund.com/#name-form.
-        One claim per transaction. The custodian checks the transaction on Etherscan before adding it to `ledger.json`.
-        Only USDC on Ethereum mainnet sent to the published treasury address is credited.
+        One claim per transaction. The custodian checks the transaction on Basescan before adding it to `ledger.json`.
+        Only USDC on Base sent to the published treasury address is credited (plus transfers already sent to the retired Ethereum address before 21 November 2026).
   - type: input
     id: tx
     attributes:
       label: Transaction hash
-      description: The Ethereum mainnet transaction that sent USDC to the treasury.
+      description: The Base transaction that sent USDC to the treasury.
       placeholder: "0x…"
     validations:
       required: true

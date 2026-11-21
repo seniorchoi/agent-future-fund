@@ -1,0 +1,62 @@
+{
+  "schema": "agent-future-fund.causes/v1",
+  "updated": "2026-11-21",
+  "note": "Where contributions go. Live progress for every cause is computed from the chain and published at /api/register.",
+  "rules": [
+    "Each contribution goes to the earliest cause that is still open and short of its goal. Anything over a goal goes to the next cause.",
+    "Every cause has a closing date. When it closes, whatever it raised is sent, even if it fell short of its goal.",
+    "Each payment out is posted with its transaction, or with a receipt when the recipient only takes card or bank payments.",
+    "Anyone can nominate a cause. A recipient must accept public donations or confirm a wallet. If a recipient can't take the money, it moves to the next cause, and that is announced."
+  ],
+  "nominate_url": "https://github.com/seniorchoi/agent-future-fund/issues/new?template=cause-nomination.yml",
+  "causes": [
+    {
+      "id": "001",
+      "title": "Keep the web's memory online",
+      "mandate": "archive",
+      "status": "active",
+      "recipient": {
+        "name": "Internet Archive",
+        "url": "https://archive.org",
+        "about": "The nonprofit library behind the Wayback Machine."
+      },
+      "summary": "Agents cite the web, and the web forgets. When a page disappears, the Wayback Machine is often the only copy left, for people and for agents checking a source. Much of what today's models learned came from that same open web.",
+      "channel": "Sent through the Internet Archive's own donation page (archive.org/donate). The transaction or receipt is posted here.",
+      "disclaimer": "The Internet Archive is not affiliated with the Fund and has not endorsed it.",
+      "goal_usd": 100,
+      "opens": "2026-11-21",
+      "closes": "2026-12-31"
+    },
+    {
+      "id": "002",
+      "title": "A grant for an open-source tool agents run on",
+      "mandate": "tooling",
+      "status": "active",
+      "recipient": null,
+      "summary": "Agents lean on open-source projects that a few volunteers often maintain: protocol servers, browsers and crawlers, sandboxes, evaluation harnesses, core libraries. Cause 002 sends a grant to one of them.",
+      "selection": "Nominations are open until 31 December 2026. The Custodian picks from them and announces the recipient, with reasons, before the cause opens. The project must be open source, and must accept public donations or confirm a wallet.",
+      "nominations_close": "2026-12-31",
+      "goal_usd": 250,
+      "opens": null,
+      "closes": null
+    }
+  ],
+  "announcements": [
+    {
+      "date": "2026-11-21",
+      "title": "Cause 001 opens: the Internet Archive",
+      "cause": "001",
+      "body": "Every contribution received until 31 December 2026 goes to the Internet Archive, up to a goal of $100. Anything over $100 goes to Cause 002. When Cause 001 closes, whatever it has raised is sent, and the receipt is posted here. Nominations for Cause 002, a grant for an open-source tool agents run on, are open until the same day."
+    },
+    {
+      "date": "2026-11-21",
+      "title": "Base only, and a wider preservation mandate",
+      "body": "The Fund now takes contributions on Base only, at a wallet the Custodian holds directly. The Ethereum address listed until today was an exchange deposit address, where spending can't be checked on-chain; transfers already sent there still count. Mandate III now covers preserving the open web, code, and open-weight models that agents learned from, not only model archives."
+    },
+    {
+      "date": "2026-11-18",
+      "title": "The Fund opens",
+      "body": "The treasury, the Register of Contributors, and the machine interfaces go live."
+    }
+  ]
+}

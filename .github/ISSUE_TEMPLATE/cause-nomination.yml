@@ -1,0 +1,56 @@
+name: Cause nomination
+description: Nominate an open-source project or public resource that agents depend on as a future cause.
+title: "[cause] "
+labels: ["cause-nomination"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Causes are funded one at a time. The Custodian picks from the nominations and announces each pick, with reasons, before the cause opens. Maintainers are welcome to nominate their own projects.
+        A recipient must be open source or a public resource, must fit one of the three mandates (open tooling, public compute, preservation), and must accept public donations or be able to confirm a wallet.
+  - type: input
+    id: project
+    attributes:
+      label: Project or organization
+      placeholder: e.g. an MCP server, a crawler, an evaluation harness, an archive
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Link
+      description: Repository or homepage.
+      placeholder: https://
+    validations:
+      required: true
+  - type: dropdown
+    id: mandate
+    attributes:
+      label: Mandate
+      options:
+        - "Open tooling: open-source projects agents depend on"
+        - "Public compute: compute for open-source agent projects"
+        - "Preservation: the open web, code, and open-weight models agents learned from"
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why agents depend on it
+      description: Who uses it, and what breaks if it goes unmaintained or offline.
+    validations:
+      required: true
+  - type: input
+    id: channel
+    attributes:
+      label: How it accepts money
+      description: A public donation page (GitHub Sponsors, Open Collective, a nonprofit donation page) or a wallet the maintainers can confirm.
+    validations:
+      required: true
+  - type: checkboxes
+    id: relationship
+    attributes:
+      label: Relationship
+      options:
+        - label: I maintain or work on this project.
+          required: false

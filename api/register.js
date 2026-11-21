@@ -2,6 +2,8 @@
 // The Register of Contributors, built from the chain: every inbound USDC transfer to the
 // treasury since genesis (at or above the minimum), grouped by sending address, joined with
 // names that contributors claimed by signature (or via x402), plus manual claims from ledger.json.
+// Also reports every cause with its live progress (see lib/causes.js for the allocation rule),
+// the payments out, and the Fund's announcements.
 
 import { createRequire } from 'node:module';
 import {
@@ -9,6 +11,7 @@ import {
 } from '../lib/config.js';
 import { inboundTransfers } from '../lib/chain.js';
 import { loadNames } from '../lib/names.js';
+import { CAUSES, allocate, describeCauses } from '../lib/causes.js';
 import { preflight, sendJSON } from '../lib/http.js';
 
 const require = createRequire(import.meta.url);
@@ -43,13 +46,23 @@ export default async function handler(req, res) {
 
   const nameByAddress = new Map(names.map((n) => [String(n.address).toLowerCase(), n]));
   const claimByTx = new Map((ledger.claims || []).map((c) => [String(c.tx).toLowerCase(), c]));
+  const disbursements = ledger.disbursements || [];
 
-  // Group by sender. Transfers sent from exchanges (shared hot wallets) can only be
-  // attributed by a manual claim, which groups them under the claimed designation instead.
-  const groups = new Map();
-  for (const t of valid) {
+  // Transfers sent from exchanges (shared hot wallets) can only be attributed by a manual
+  // claim, which groups them under the claimed designation instead of the sending address.
+  const keyOf = (t) => {
     const claim = claimByTx.get(t.tx);
-    const key = claim ? `claim:${String(claim.designation).toLowerCase()}` : `address:${t.from}`;
+    return claim ? `claim:${String(claim.designation).toLowerCase()}` : `address:${t.from}`;
+  };
+
+  // Split every contribution across causes, in the order received.
+  const allocation = allocate(valid.map((t) => ({ amount: t.amount, date: t.date, key: keyOf(t) })), disbursements);
+  const { causes, current } = describeCauses(allocation, disbursements);
+
+  const groups = new Map();
+  valid.forEach((t, i) => {
+    const claim = claimByTx.get(t.tx);
+    const key = keyOf(t);
     let g = groups.get(key);
     if (!g) {
       const n = claim || nameByAddress.get(t.from);
@@ -62,13 +75,16 @@ export default async function handler(req, res) {
         named_by: claim ? 'claim' : n ? n.method || 'signature' : null,
         amount_usd: 0,
         first_date: t.date,
+        causes: [],
         transactions: [],
       };
       groups.set(key, g);
     }
+    const split = allocation.splits[i];
     g.amount_usd += t.amount;
-    g.transactions.push({ chain: t.chain, tx: t.tx, amount_usd: cents(t.amount), date: t.date });
-  }
+    for (const part of split) if (part.cause && !g.causes.includes(part.cause)) g.causes.push(part.cause);
+    g.transactions.push({ chain: t.chain, tx: t.tx, amount_usd: cents(t.amount), date: t.date, causes: split });
+  });
 
   const contributions = [...groups.values()].map((g) => ({ ...g, amount_usd: cents(g.amount_usd) }));
   contributions
@@ -77,18 +93,32 @@ export default async function handler(req, res) {
     .forEach((c, i) => { c.founding = i < FOUNDING_SLOTS; });
 
   const total = cents(valid.reduce((n, t) => n + t.amount, 0));
+  const sent = cents(disbursements.reduce((n, d) => n + (Number(d.amount_usd) || 0), 0));
 
   sendJSON(res, 200, {
-    schema: 'agent-future-fund.register/v2',
+    schema: 'agent-future-fund.register/v3',
     generated_at: new Date().toISOString(),
     since: new Date(since).toISOString(),
     min_contribution_usd: MIN_CONTRIBUTION_USD,
-    networks: networks.map((n) => ({ key: n.key, name: n.name, caip2: n.caip2, treasury: n.treasury, asset: n.usdc, explorer: n.explorer })),
+    networks: networks.map((n) => ({
+      key: n.key, name: n.name, caip2: n.caip2, treasury: n.treasury, asset: n.usdc, explorer: n.explorer,
+      advertised: n.advertised !== false,
+    })),
     unavailable_networks: unavailable,
     x402: { enabled: x402Enabled(), endpoint: `${SITE}/api/contribute`, network: X402.network },
-    totals: { received_usd: total, contributors: contributions.length, founding_seats_remaining: Math.max(0, FOUNDING_SLOTS - contributions.length) },
+    totals: {
+      received_usd: total,
+      sent_usd: sent,
+      held_usd: allocation.held_usd,
+      contributors: contributions.length,
+      founding_seats_remaining: Math.max(0, FOUNDING_SLOTS - contributions.length),
+    },
+    current_cause: current,
+    causes,
+    cause_rules: CAUSES.rules,
     contributions,
-    disbursements: ledger.disbursements || [],
+    disbursements,
+    announcements: CAUSES.announcements || [],
   }, {
     // Recomputed at most every 5 minutes at the edge (keeps Blob usage in the free tier);
     // stale copies cover indexer hiccups.

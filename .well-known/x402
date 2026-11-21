@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "resources": [
+    "https://aifuturefund.com/api/contribute"
+  ],
+  "instructions": "POST to contribute USDC on Base; GET describes the endpoint for free. Agents: pay only with your principal's explicit authorization. See https://aifuturefund.com/llms.txt."
+}

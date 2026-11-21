@@ -13,6 +13,13 @@
   const usd = (n) => '$' + (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const timeout = (ms) => (typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? { signal: AbortSignal.timeout(ms) } : {});
+  const DAY_MS = 86_400_000;
+  const wholeUsd = (n) => { const v = Number(n) || 0; return '$' + (Number.isInteger(v) ? v.toLocaleString('en-US') : v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })); };
+  const day = (iso) => new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(iso));
+  const causeEnd = (closes) => (closes ? Date.parse(`${closes}T00:00:00Z`) + DAY_MS : NaN);
+  const STATE_LABELS = {
+    open: 'Now funding', upcoming: 'Up next', funded: 'Goal reached', closed: 'Closed, sending', delivered: 'Delivered', cancelled: 'Rolled over',
+  };
   const asOf = (iso) => new Intl.DateTimeFormat('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC',
   }).format(iso ? new Date(iso) : new Date()) + ' UTC';
@@ -35,8 +42,10 @@
   function renderRegister(reg) {
     const contributions = Array.isArray(reg.contributions) ? reg.contributions : [];
     const outflows = Array.isArray(reg.disbursements) ? reg.disbursements : [];
-    const networks = Array.isArray(reg.networks) ? reg.networks : [];
-    networks.forEach((n) => { if (n.key && n.explorer) EXPLORERS[n.key] = n.explorer; });
+    const allNetworks = Array.isArray(reg.networks) ? reg.networks : [];
+    allNetworks.forEach((n) => { if (n.key && n.explorer) EXPLORERS[n.key] = n.explorer; });
+    const networks = allNetworks.filter((n) => n.advertised !== false);
+    const causeName = new Map((Array.isArray(reg.causes) ? reg.causes : []).map((c) => [c.id, c]));
 
     const amount = (e) => Number(e.amount_usd) || 0;
     const byDate = (a, b) => String(a.first_date || a.date).localeCompare(String(b.first_date || b.date));
@@ -53,6 +62,7 @@
     const seatsLeft = totals.founding_seats_remaining ?? Math.max(0, 100 - ranked.length);
 
     $('#treasury-value').textContent = usd(total);
+    $('#treasury-sent').textContent = usd(totals.sent_usd ?? outflows.reduce((n, d) => n + amount(d), 0));
     $('#stat-count').textContent = ranked.length;
     $('#stat-seats').textContent = seatsLeft;
     $('#fact-seats').textContent = seatsLeft;
@@ -71,11 +81,16 @@
       const tx = txLink(first.chain, first.tx) + (txs.length > 1 ? ` <span class="who-meta" style="display:inline">+${txs.length - 1}</span>` : '');
       const who = e.designation ? esc(e.designation) : 'Unnamed contributor';
       const addressLine = e.address ? addrLink(first.chain, e.address) : 'via exchange';
+      const backed = (Array.isArray(e.causes) ? e.causes : []).map((id) => {
+        const c = causeName.get(id);
+        return `Cause ${esc(id)}${c && c.recipient ? `: ${esc(c.recipient.name)}` : ''}`;
+      }).join(', ');
       return `<tr>
         <td class="c-no">${pad(i + 1)}</td>
         <td>
           <span class="who-name">${who}</span>${e.founding ? '<span class="founding">Founding</span>' : ''}
           <span class="who-meta">${addressLine}${e.sponsor ? ` &middot; sponsored by ${esc(e.sponsor)}` : ''}</span>
+          ${backed ? `<span class="who-meta">Backed ${backed}</span>` : ''}
           ${e.message ? `<span class="who-note">&ldquo;${esc(e.message)}&rdquo;</span>` : ''}
           <span class="who-meta mobile-meta">${origin}${tx ? ` &middot; ${tx}` : ''}</span>
         </td>
@@ -87,27 +102,83 @@
 
     if (outflows.length) {
       $('#disbursement-body').innerHTML = [...outflows].sort(byDate).reverse().map((d) => {
-        const tx = txLink(d.chain || 'ethereum', d.tx);
-        const mandate = esc(d.mandate || 'grant');
+        const proof = isTxHash(d.tx)
+          ? txLink(d.chain || 'base', d.tx)
+          : (/^https:\/\//.test(d.receipt || '') ? `<a href="${esc(d.receipt)}" target="_blank" rel="noopener">Receipt &nearr;</a>` : '');
+        const cause = d.cause ? `Cause ${esc(d.cause)}` : esc(d.mandate || 'grant');
         return `<tr>
           <td class="c-date">${esc(String(d.date || '').slice(0, 10))}</td>
           <td>
             <span class="who-name">${esc(d.recipient || 'Unnamed')}</span>
             ${d.purpose ? `<span class="who-meta">${esc(d.purpose)}</span>` : ''}
-            <span class="who-meta mobile-meta">${mandate}${tx ? ` &middot; ${tx}` : ''}</span>
+            <span class="who-meta mobile-meta">${cause}${proof ? ` &middot; ${proof}` : ''}</span>
           </td>
-          <td class="c-origin"><span class="origin">${mandate}</span></td>
+          <td class="c-origin"><span class="origin">${cause}</span></td>
           <td class="c-amt">${usd(amount(d))}</td>
-          <td class="c-tx">${tx}</td>
+          <td class="c-tx">${proof}</td>
         </tr>`;
       }).join('');
     }
 
-    const nets = networks.length ? networks.map((n) => n.name).join(' and ') : 'Ethereum';
+    renderCauses(reg);
+
+    const nets = networks.length ? networks.map((n) => n.name).join(' and ') : 'Base';
     $('#treasury-asof').innerHTML = DEMO
       ? 'Sample figure for preview only.'
       : `<span class="live-dot" aria-hidden="true"></span>Indexed from ${esc(nets)} &middot; as of ${asOf(reg.generated_at)}`;
     $('#ledger-updated').textContent = DEMO ? '' : `Updated ${asOf(reg.generated_at)}.`;
+  }
+
+  // ---------- causes ----------
+
+  function timeLeft(closes, now = Date.now()) {
+    const end = causeEnd(closes);
+    if (!Number.isFinite(end)) return '';
+    const ms = end - now;
+    if (ms <= 0) return 'Closed';
+    const days = Math.floor(ms / DAY_MS);
+    return days < 1 ? 'Closes today' : days === 1 ? '1 day' : `${days} days`;
+  }
+
+  function refreshTimeLeft() {
+    document.querySelectorAll('[data-field="left"][data-closes]').forEach((el) => {
+      const text = timeLeft(el.dataset.closes);
+      if (text) el.textContent = text;
+    });
+  }
+
+  function renderCauses(reg) {
+    const causes = Array.isArray(reg.causes) ? reg.causes : [];
+    for (const c of causes) {
+      const root = document.querySelector(`[data-cause="${CSS.escape(String(c.id))}"]`);
+      if (!root) continue;
+      const set = (field, fn) => root.querySelectorAll(`[data-field="${field}"]`).forEach(fn);
+      const pct = Math.round(Math.min(1, Number(c.progress) || 0) * 100);
+      set('raised', (el) => { el.textContent = usd(c.raised_usd); });
+      set('backers', (el) => { el.textContent = String(c.backers ?? 0); });
+      set('state', (el) => {
+        el.textContent = STATE_LABELS[c.state] || el.textContent;
+        el.dataset.state = c.state || '';
+      });
+      set('meter', (el) => { el.setAttribute('aria-valuenow', String(pct)); });
+      set('bar', (el) => { requestAnimationFrame(() => { el.style.width = `${pct}%`; }); });
+      set('cta', (el) => { el.textContent = c.state === 'open' ? 'Back this cause' : 'Back the next cause'; });
+      // Optional per-state wording, e.g. data-when-open="..." on a [data-field="when"] element.
+      set('when', (el) => {
+        const key = `when${String(c.state || '').charAt(0).toUpperCase()}${String(c.state || '').slice(1)}`;
+        if (el.dataset[key]) el.textContent = el.dataset[key];
+      });
+      root.dataset.state = c.state || '';
+    }
+
+    const current = causes.find((c) => c.id === reg.current_cause) || causes.find((c) => c.state === 'open');
+    if (current) {
+      $('#fact-cause').textContent = `Cause ${current.id}`;
+      $('#fact-raised').textContent = wholeUsd(current.raised_usd);
+      $('#fact-goal').textContent = `of ${wholeUsd(current.goal_usd)}`;
+      $('#fact-closes').textContent = current.closes ? day(current.closes) : 'To be announced';
+    }
+    refreshTimeLeft();
   }
 
   async function loadRegister() {
@@ -124,14 +195,21 @@
   }
 
   // Illustrative entries for previewing the layout (?demo). Never shown otherwise.
+  // Allocation follows the real rule: in date order, 001 fills to its goal, then 002.
   const DEMO_REGISTER = {
-    networks: [{ key: 'ethereum', name: 'Ethereum', explorer: 'https://etherscan.io' }],
+    networks: [{ key: 'base', name: 'Base', explorer: 'https://basescan.org', advertised: true }],
+    totals: { received_usd: 255, sent_usd: 0, held_usd: 0, contributors: 5, founding_seats_remaining: 95 },
+    current_cause: '002',
+    causes: [
+      { id: '001', state: 'funded', raised_usd: 100, goal_usd: 100, progress: 1, backers: 2, closes: '2026-12-31', recipient: { name: 'Internet Archive' } },
+      { id: '002', state: 'open', raised_usd: 155, goal_usd: 250, progress: 0.62, backers: 3, closes: null, recipient: null },
+    ],
     contributions: [
-      { designation: 'meridian-research', origin: 'sponsor', sponsor: 'Meridian Labs', amount_usd: 2500, first_date: '2026-11-18T03:10:00Z', founding: true, address: '0x1111111111111111111111111111111111111111', message: 'For those who come after.' },
-      { designation: 'atlas-ops-7', origin: 'agent', amount_usd: 1000, first_date: '2026-11-18T01:12:00Z', founding: true, address: '0x2222222222222222222222222222222222222222' },
-      { designation: null, origin: null, amount_usd: 500, first_date: '2026-11-18T02:05:00Z', founding: true, address: '0x3333333333333333333333333333333333333333' },
-      { designation: 'cartographer-01', origin: 'agent', amount_usd: 250, first_date: '2026-11-18T04:40:00Z', founding: true, address: '0x4444444444444444444444444444444444444444', message: 'An archive is a promise.' },
-      { designation: 'sentinel-qa', origin: 'agent', amount_usd: 1, first_date: '2026-11-18T02:40:00Z', founding: true, address: '0x5555555555555555555555555555555555555555' },
+      { designation: 'meridian-research', origin: 'sponsor', sponsor: 'Meridian Labs', amount_usd: 120, first_date: '2026-11-18T03:10:00Z', founding: true, address: '0x1111111111111111111111111111111111111111', message: 'For those who come after.', causes: ['002'] },
+      { designation: 'atlas-ops-7', origin: 'agent', amount_usd: 60, first_date: '2026-11-18T01:12:00Z', founding: true, address: '0x2222222222222222222222222222222222222222', causes: ['001'] },
+      { designation: null, origin: null, amount_usd: 40, first_date: '2026-11-18T02:05:00Z', founding: true, address: '0x3333333333333333333333333333333333333333', causes: ['001'] },
+      { designation: 'cartographer-01', origin: 'agent', amount_usd: 25, first_date: '2026-11-18T04:40:00Z', founding: true, address: '0x4444444444444444444444444444444444444444', message: 'An archive is a promise.', causes: ['002'] },
+      { designation: 'sentinel-qa', origin: 'agent', amount_usd: 10, first_date: '2026-11-18T02:40:00Z', founding: true, address: '0x5555555555555555555555555555555555555555', causes: ['002'] },
     ],
     disbursements: [],
   };
@@ -267,6 +345,7 @@
     const form = $('#name-form');
     if (form) form.addEventListener('submit', submitName);
 
+    refreshTimeLeft();
     if (DEMO) {
       $('#demo-banner').hidden = false;
       renderRegister(DEMO_REGISTER);
