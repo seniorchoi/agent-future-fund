@@ -9,10 +9,10 @@ A public treasury funded by AI agents and the people who direct them. It backs o
 | File | What it is |
 |---|---|
 | `index.html`, `styles.css`, `app.js` | The human-facing page. Live figures come from `/api/register`. |
-| `causes.json` | Causes (recipient, goal, closing date), the rules that govern them, and announcements. |
+| `causes.json` | Causes (recipient, goal, closing date), the rules, pre-payout checks, the Cause 002 rubric, and announcements. |
 | `llms.txt` | The agent-facing summary and policy. This is what agents actually read. |
 | `manifesto.json` | Machine-readable treasury, custody, mandate, causes, interfaces, and agent policy. |
-| `ledger.json` | Manual claims and payments out (disbursements). |
+| `ledger.json` | Manual claims and payments out (disbursements). A payout entry records the date, USDC received, amount sent, and any fee together. |
 | `openapi.json`, `.well-known/x402` | API description and x402 discovery document, for x402scan and other indexes. |
 | `api/register.js` | The register, built from the chain, with every cause's live progress. |
 | `api/name.js` | Naming a contribution by signature. |
@@ -46,13 +46,27 @@ Every contribution goes to a published cause. The rule lives in `lib/causes.js` 
 - `llms.txt`: the Causes section.
 - `manifesto.json`: `causes.current`.
 
-**Close and deliver a cause.** After the closing date, send what it raised (the register shows `raised_usd`) through the recipient's own donation channel. Then add a payment to `ledger.json` → `disbursements`:
+**Publish the pre-payout check first.** Before any payout, add a check to `causes.json` → `pre_payout.checks` and mirror it on the page: the recipient, how the destination was verified from the recipient's own site, the amount, and any change from the published cause. Cause 001's check is already published. If a proposed safeguard is turned down, add it to `pre_payout.declined_safeguards` with `"status": "declined"`. Do not drop it silently.
+
+**Close and deliver a cause.** After the closing date, send what it raised (the register shows `raised_usd`) through the recipient's own donation channel. Then add one payment to `ledger.json` → `disbursements`:
 
 ```json
-{ "date": "2027-01-02", "cause": "001", "recipient": "Internet Archive", "purpose": "Cause 001: Keep the web's memory online", "mandate": "archive", "amount_usd": 100, "chain": "base", "tx": "0x…" }
+{
+  "date": "2027-01-02",
+  "cause": "001",
+  "recipient": "Internet Archive",
+  "purpose": "Cause 001: Keep the web's memory online",
+  "mandate": "archive",
+  "amount_usd": 97.5,
+  "usdc_received": 100,
+  "amount_sent_usd": 97.5,
+  "fee_usd": 2.5,
+  "chain": "base",
+  "tx": "0x…"
+}
 ```
 
-Use `tx` for an on-chain payment, or `receipt` (a public https URL) for a card or bank donation. Add an announcement saying what was sent and where, and move the cause card on the page to show it as delivered.
+`date` is the payout date. `usdc_received` is the USDC that came in on Base for the payout. `amount_sent_usd` is what the recipient was sent. `fee_usd` is any fee or other gap, or `0` when there is none. `amount_usd` is what existing readers display and sum; set it equal to `amount_sent_usd`. Use `tx` for an on-chain payment, or `receipt` (a public https URL) for a card or bank donation. Older entries that only have `amount_usd` still work. Add an announcement saying what was sent and where, and move the cause card on the page to show it as delivered.
 
 **Cancel a cause.** If a recipient can't take the money, set its `status` to `"cancelled"`. Its contributions flow to the next cause automatically. Announce it.
 

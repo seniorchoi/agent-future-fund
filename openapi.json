@@ -19,7 +19,7 @@
     "/api/register": {
       "get": {
         "operationId": "getRegister",
-        "summary": "Register of Contributors, causes with live progress, payments out, and announcements",
+        "summary": "Register of Contributors, causes with live progress, payments out, the pre-payout check, and announcements",
         "responses": {
           "200": {
             "description": "The register, indexed from the chain.",
@@ -27,6 +27,98 @@
               "application/json": {
                 "schema": {
                   "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/causes.json": {
+      "get": {
+        "operationId": "getCauses",
+        "summary": "Causes, rules, pre-payout checks, the Cause 002 rubric, and announcements",
+        "description": "pre_payout.checks holds checks published before a payout, starting with Cause 001 on 2026-11-24. pre_payout.declined_safeguards lists safeguards the operator declined, each with status declined. Cause 002.rubric is the selection criteria published 2026-11-24. Nothing has been raised.",
+        "responses": {
+          "200": {
+            "description": "Cause definitions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ledger.json": {
+      "get": {
+        "operationId": "getLedger",
+        "summary": "Manual claims and payout entries",
+        "description": "disbursements is the list of payouts. Existing readers use amount_usd. One entry may also record date, usdc_received, amount_sent_usd, and fee_usd. When amount_sent_usd is set, amount_usd equals it. The list is empty: no payout has been made, and nothing has been raised.",
+        "responses": {
+          "200": {
+            "description": "The ledger.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "claims": {
+                      "type": "array"
+                    },
+                    "disbursements": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "date": {
+                            "type": "string",
+                            "description": "Payout date, YYYY-MM-DD."
+                          },
+                          "cause": {
+                            "type": "string"
+                          },
+                          "recipient": {
+                            "type": "string"
+                          },
+                          "purpose": {
+                            "type": "string"
+                          },
+                          "mandate": {
+                            "type": "string"
+                          },
+                          "amount_usd": {
+                            "type": "number",
+                            "description": "Amount existing readers display and sum. Equals amount_sent_usd when that field is set."
+                          },
+                          "usdc_received": {
+                            "type": "number",
+                            "description": "USDC received on Base for this payout."
+                          },
+                          "amount_sent_usd": {
+                            "type": "number",
+                            "description": "Amount sent to the recipient."
+                          },
+                          "fee_usd": {
+                            "type": "number",
+                            "description": "Fee or other gap. 0 when there is none."
+                          },
+                          "chain": {
+                            "type": "string"
+                          },
+                          "tx": {
+                            "type": "string"
+                          },
+                          "receipt": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
