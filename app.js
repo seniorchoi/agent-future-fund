@@ -48,6 +48,11 @@
     const causeName = new Map((Array.isArray(reg.causes) ? reg.causes : []).map((c) => [c.id, c]));
 
     const amount = (e) => Number(e.amount_usd) || 0;
+    // New payout entries keep amount_usd equal to amount_sent_usd. If amount_usd
+    // was omitted, show amount_sent_usd so the row still has a figure.
+    const payoutAmount = (d) => (d.amount_usd != null && d.amount_usd !== '' && Number.isFinite(Number(d.amount_usd))
+      ? Number(d.amount_usd)
+      : (d.amount_sent_usd != null && d.amount_sent_usd !== '' && Number.isFinite(Number(d.amount_sent_usd)) ? Number(d.amount_sent_usd) : 0));
     const byDate = (a, b) => String(a.first_date || a.date).localeCompare(String(b.first_date || b.date));
     const txLink = (chain, h) => (isTxHash(h)
       ? `<a href="${esc(EXPLORERS[chain] || EXPLORERS.ethereum)}/tx/${h}" target="_blank" rel="noopener">${shortHex(h)}</a>`
@@ -62,7 +67,7 @@
     const seatsLeft = totals.founding_seats_remaining ?? Math.max(0, 100 - ranked.length);
 
     $('#treasury-value').textContent = usd(total);
-    $('#treasury-sent').textContent = usd(totals.sent_usd ?? outflows.reduce((n, d) => n + amount(d), 0));
+    $('#treasury-sent').textContent = usd(totals.sent_usd ?? outflows.reduce((n, d) => n + payoutAmount(d), 0));
     $('#stat-count').textContent = ranked.length;
     $('#stat-seats').textContent = seatsLeft;
     $('#fact-seats').textContent = seatsLeft;
@@ -106,15 +111,20 @@
           ? txLink(d.chain || 'base', d.tx)
           : (/^https:\/\//.test(d.receipt || '') ? `<a href="${esc(d.receipt)}" target="_blank" rel="noopener">Receipt &nearr;</a>` : '');
         const cause = d.cause ? `Cause ${esc(d.cause)}` : esc(d.mandate || 'grant');
+        const breakdown = [];
+        if (d.usdc_received != null && d.usdc_received !== '') breakdown.push(`USDC received ${usd(d.usdc_received)}`);
+        if (d.amount_sent_usd != null && d.amount_sent_usd !== '') breakdown.push(`sent ${usd(d.amount_sent_usd)}`);
+        if (d.fee_usd != null && d.fee_usd !== '') breakdown.push(`fee ${usd(d.fee_usd)}`);
         return `<tr>
           <td class="c-date">${esc(String(d.date || '').slice(0, 10))}</td>
           <td>
             <span class="who-name">${esc(d.recipient || 'Unnamed')}</span>
             ${d.purpose ? `<span class="who-meta">${esc(d.purpose)}</span>` : ''}
+            ${breakdown.length ? `<span class="who-meta">${breakdown.join(' &middot; ')}</span>` : ''}
             <span class="who-meta mobile-meta">${cause}${proof ? ` &middot; ${proof}` : ''}</span>
           </td>
           <td class="c-origin"><span class="origin">${cause}</span></td>
-          <td class="c-amt">${usd(amount(d))}</td>
+          <td class="c-amt">${usd(payoutAmount(d))}</td>
           <td class="c-tx">${proof}</td>
         </tr>`;
       }).join('');
@@ -198,7 +208,7 @@
   // Allocation follows the real rule: in date order, 001 fills to its goal, then 002.
   const DEMO_REGISTER = {
     networks: [{ key: 'base', name: 'Base', explorer: 'https://basescan.org', advertised: true }],
-    totals: { received_usd: 255, sent_usd: 0, held_usd: 0, contributors: 5, founding_seats_remaining: 95 },
+    totals: { received_usd: 255, sent_usd: 97.5, held_usd: 0, contributors: 5, founding_seats_remaining: 95 },
     current_cause: '002',
     causes: [
       { id: '001', state: 'funded', raised_usd: 100, goal_usd: 100, progress: 1, backers: 2, closes: '2026-12-31', recipient: { name: 'Internet Archive' } },
@@ -211,7 +221,13 @@
       { designation: 'cartographer-01', origin: 'agent', amount_usd: 25, first_date: '2026-11-18T04:40:00Z', founding: true, address: '0x4444444444444444444444444444444444444444', message: 'An archive is a promise.', causes: ['002'] },
       { designation: 'sentinel-qa', origin: 'agent', amount_usd: 10, first_date: '2026-11-18T02:40:00Z', founding: true, address: '0x5555555555555555555555555555555555555555', causes: ['002'] },
     ],
-    disbursements: [],
+    disbursements: [
+      {
+        date: '2027-01-02', cause: '001', recipient: 'Internet Archive', mandate: 'archive',
+        purpose: 'Illustrative sample, not a real payout.',
+        amount_usd: 97.5, usdc_received: 100, amount_sent_usd: 97.5, fee_usd: 2.5,
+      },
+    ],
   };
 
   // ---------- name form (personal_sign with the contributing wallet) ----------

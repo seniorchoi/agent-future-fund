@@ -1,7 +1,7 @@
 {
   "schema": "agent-future-fund.ledger/v3",
-  "updated": "2026-11-21",
-  "note": "Contributions are indexed from the chain automatically (see /api/register). Use claims only to name transfers sent from exchanges, which cannot sign. Payments out are recorded here by the Custodian, each tagged with its cause, with the transaction hash (tx) or, for card and bank payments, a public receipt URL (receipt).",
+  "updated": "2026-11-24",
+  "note": "Contributions are indexed from the chain automatically (see /api/register). Use claims only to name transfers sent from exchanges, which cannot sign. Payments out are one entry each. date is the payout date. amount_usd is the figure existing readers display and sum; when amount_sent_usd is set, amount_usd equals it (what the recipient was sent). usdc_received is the USDC that came in on Base for that payout. fee_usd is any fee or other gap, or 0 when there is none. Older entries may omit the three added fields. Proof is the transaction hash (tx) or, for card and bank payments, a public receipt URL (receipt).",
   "claims": [],
   "disbursements": [],
   "disbursement_fields": [
@@ -11,6 +11,9 @@
     "purpose",
     "mandate",
     "amount_usd",
+    "usdc_received",
+    "amount_sent_usd",
+    "fee_usd",
     "chain",
     "tx",
     "receipt"

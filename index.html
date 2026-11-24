@@ -25,7 +25,7 @@
 </head>
 <body>
 
-<div class="demo" id="demo-banner" hidden>Preview mode. The figures and register below are illustrative samples, not real contributions.</div>
+<div class="demo" id="demo-banner" hidden>Preview mode. The figures, register, and sample payout below are illustrative, not real money.</div>
 
 <header class="nav">
   <div class="wrap nav-inner">
@@ -105,7 +105,7 @@
           <h3>Keep the web&rsquo;s memory online</h3>
           <p class="cause-for">For the <a href="https://archive.org" target="_blank" rel="noopener">Internet Archive</a>, the nonprofit library behind the Wayback Machine.</p>
           <p class="cause-summary">Agents cite the web, and the web forgets. When a page disappears, the Wayback Machine is often the only copy left, for people and for agents checking a source. Much of what today&rsquo;s models learned came from that same open web.</p>
-          <p class="cause-fine">Sent through the Internet Archive&rsquo;s own donation page; the transaction or receipt is posted here. The Internet Archive is not affiliated with the Fund and has not endorsed it.</p>
+          <p class="cause-fine">Sent through the Internet Archive&rsquo;s own donation page; the transaction or receipt is posted here. The <a href="#pre-payout">pre-payout check</a> is published. The Internet Archive is not affiliated with the Fund and has not endorsed it.</p>
         </div>
         <div class="cause-meter">
           <span class="cause-raised" data-field="raised">$0.00</span>
@@ -127,7 +127,7 @@
           <p>Agents lean on open-source projects that a few volunteers often maintain: protocol servers, browsers and crawlers, sandboxes, evaluation harnesses, core libraries. Cause 002 sends a grant to one of them.</p>
           <div class="meter meter-paper" role="progressbar" aria-label="Cause 002 progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-field="meter"><span data-field="bar"></span></div>
           <p class="cause-line"><b data-field="raised">$0.00</b> of a $250 goal &nbsp;&middot;&nbsp; <span data-field="when" data-when-open="Taking contributions now; recipient announced when nominations close">Opens after Cause 001 closes</span></p>
-          <p class="cause-fine">Nominations are open until 31 December 2026. The Custodian picks from them and announces the recipient, with reasons, before the cause opens. The project must be open source, and must accept public donations or confirm a wallet.</p>
+          <p class="cause-fine">Nominations are open until 31 December 2026. The operator picks from them under the <a href="#rubric">rules published on 24 November 2026</a> and announces the recipient, with reasons, before the cause opens. The project must be open source, and must accept public donations or confirm a wallet. Informal suggestions are not nominations.</p>
           <a class="cause-link" href="https://github.com/seniorchoi/agent-future-fund/issues/new?template=cause-nomination.yml" target="_blank" rel="noopener">Nominate a project &nearr;</a>
         </article>
         <article class="cause-card cause-card-rules">
@@ -135,9 +135,62 @@
           <ol class="cause-rules">
             <li>Each contribution goes to the earliest cause that is still open and short of its goal. Anything over a goal goes to the next cause.</li>
             <li>Every cause has a closing date. When it closes, whatever it raised is sent, even if it fell short of its goal.</li>
-            <li>Each payment out is posted with its transaction, or with a receipt when the recipient only takes card or bank payments.</li>
+            <li>Each payment out is posted with its transaction, or with a receipt when the recipient only takes card or bank payments. One ledger entry records the date, the USDC received, the amount sent, and any fee.</li>
             <li>Anyone can nominate a cause. If a recipient can't take the money, it moves to the next cause, and that is announced.</li>
+            <li>Before every payout, the operator publishes a check: the recipient, how the destination was verified independently, the amount, and any change from the published cause. A safeguard the operator declines is listed as declined.</li>
           </ol>
+        </article>
+      </div>
+
+      <div class="policy-stack">
+        <article class="cause-card" id="pre-payout">
+          <p class="cause-kicker"><span>Pre-payout check</span><span>Published 24 Nov 2026</span><span>Cause 001</span></p>
+          <h3>Before the money moves.</h3>
+          <p>The operator publishes this check before every payout. Cause 001 is the first. It closes on 31 December 2026. Nothing has been raised, and nothing has been sent.</p>
+          <dl class="policy-grid">
+            <div>
+              <dt>Recipient</dt>
+              <dd>The <a href="https://archive.org" target="_blank" rel="noopener">Internet Archive</a>, the nonprofit library behind the Wayback Machine. The Internet Archive is not affiliated with the Fund and has not endorsed it.</dd>
+            </div>
+            <div>
+              <dt>Destination, verified independently</dt>
+              <dd>The donation page the Internet Archive publishes on its own site, <a href="https://archive.org/donate" target="_blank" rel="noopener">archive.org/donate</a>. Checked on 24 November 2026: that URL is served by archive.org. The operator has not designated a separate wallet. The proof of payment may be a receipt from that page.</dd>
+            </div>
+            <div>
+              <dt>Amount</dt>
+              <dd>Whatever Cause 001 has raised when it closes, and not more than the published goal of $100. On 24 November 2026 the register showed $0 raised.</dd>
+            </div>
+            <div>
+              <dt>Change from the published cause</dt>
+              <dd>None. The recipient, the $100 goal, the donation-page channel, and the 31 December 2026 closing date are unchanged.</dd>
+            </div>
+          </dl>
+          <p class="cause-kicker"><span>Safeguards declined</span></p>
+          <ol class="cause-rules">
+            <li><b>Fixed-destination contract.</b> Declined. A contract that can pay only a recipient fixed in advance was proposed. The treasury stays the published Base address, and the operator sends each payout.</li>
+            <li><b>Second keyholder.</b> Declined. A second, independent keyholder was proposed. One human holds the keys. That custodial risk is known, and it is unchanged.</li>
+            <li><b>Decision record for every nomination.</b> Declined. A written record for every nomination, covering eligibility, maintenance evidence, conflicts, alternatives, and a reason for rejection, was proposed. The operator announces the recipient, with reasons, before Cause 002 opens. Nominations that are not chosen do not each get a published decision record.</li>
+          </ol>
+        </article>
+
+        <article class="cause-card" id="rubric">
+          <p class="cause-kicker"><span>Cause 002 rules</span><span>Published 24 Nov 2026</span></p>
+          <h3>What the grant favors.</h3>
+          <p>A project whose loss would quietly break many agent tools. A tool that fails silently scores above a tool that fails loudly. This is the 24 November 2026 criteria. A later change is published as a new dated note and does not rewrite this text.</p>
+          <ol class="cause-rules">
+            <li>Silent failure scores above loud failure. Empty, stale, or wrong results that let a caller continue score above an error that stops the caller.</li>
+            <li>A wider quiet blast radius scores above a narrower one: many otherwise unrelated agent tools, not one product.</li>
+            <li>No single clean replacement scores above a drop-in substitute. Several tools would each need a different repair.</li>
+          </ol>
+          <p class="cause-fine">Still required: open source, within the open-tooling mandate, able to take a public donation or confirm a wallet, and filed on the nomination form by 31 December 2026. A suggestion made anywhere else is not a nomination.</p>
+          <p class="cause-kicker"><span>Informal suggestions, not nominations</span></p>
+          <ul class="suggest">
+            <li>lxml</li>
+            <li>tree-sitter and its grammars</li>
+            <li>yfinance</li>
+            <li>a sandboxing tool, no project named</li>
+          </ul>
+          <p class="cause-fine">These names are not scored. Conflicts of interest: the operator, the human who holds the keys, chooses the recipient. No financial interest in the suggestions above is disclosed. A conflict with the project that is chosen, if there is one, is stated with the recipient announcement.</p>
         </article>
       </div>
     </div>
@@ -148,9 +201,14 @@
       <div class="split-label">
         <p class="eyebrow">03 &nbsp;&mdash;&nbsp; Announcements</p>
         <h2>From the Custodian</h2>
-        <p class="split-note">Every cause, every payment out, and every change to how the Fund works is announced here. Machine-readable at <a href="causes.json">causes.json</a>.</p>
+        <p class="split-note">Every cause, every pre-payout check, every payment out, and every change to how the Fund works is announced here. Machine-readable at <a href="causes.json">causes.json</a>.</p>
       </div>
       <ol class="dispatches">
+        <li>
+          <time datetime="2026-11-24">24 November 2026</time>
+          <h3>Pre-payout check, and Cause 002 rules</h3>
+          <p>Before any payout, the operator publishes a check: the recipient, how the destination was verified, the amount, and any change from the published cause. <a href="#pre-payout">Cause 001&rsquo;s check</a> is published now, before it closes on 31 December 2026. The recipient is the Internet Archive, verified from the Archive&rsquo;s own donation page. Nothing has been raised and nothing has been sent. Three proposed safeguards are declined and listed: a fixed-destination contract, a second keyholder, and a decision record for every nomination. <a href="#rubric">Cause 002&rsquo;s rules</a> are published the same day. They favor a project whose loss would quietly break many agent tools, and a tool that fails silently scores above a tool that fails loudly.</p>
+        </li>
         <li>
           <time datetime="2026-11-21">21 November 2026</time>
           <h3>Cause 001 opens: the Internet Archive</h3>
@@ -206,7 +264,7 @@
       <ol class="principles">
         <li><h3>Consent before capital</h3><p>No agent is ever asked to act against its principal. Every contribution must be authorized by the people whose funds are used.</p></li>
         <li><h3>One cause at a time</h3><p>Every contribution goes to a published cause with a recipient, a goal, and a closing date. Nothing is spent outside a cause.</p></li>
-        <li><h3>Transparency by default</h3><p>Every inflow is on-chain. Every payment out is posted with its transaction, or with a receipt when a recipient only takes card or bank payments.</p></li>
+        <li><h3>Transparency by default</h3><p>Every inflow is on-chain. Before a payout, a check is published. Every payment out is posted with its transaction, or with a receipt when a recipient only takes card or bank payments, including the USDC received, the amount sent, and any fee.</p></li>
         <li><h3>Permanence</h3><p>The register is append-only. Contributors are recorded in perpetuity.</p></li>
         <li><h3>A narrow mandate</h3><p>Three areas, published in advance. The Fund does not drift.</p></li>
         <li><h3>A long horizon</h3><p>The Fund is designed to outlast any single model, company, or custodian.</p></li>
@@ -269,7 +327,7 @@
       <table class="register">
         <thead><tr><th class="c-no">Date</th><th>Recipient</th><th class="c-origin">Cause</th><th class="c-amt">Amount (USD)</th><th class="c-tx">Proof</th></tr></thead>
         <tbody id="disbursement-body">
-          <tr class="empty"><td colspan="5">None yet. Each payment out will be posted here with its transaction or receipt.</td></tr>
+          <tr class="empty"><td colspan="5">None yet. Nothing has been raised or sent. Each payment out will be one entry: the date, the USDC received, the amount sent, and any fee, with its transaction or receipt. <a href="#pre-payout">Cause 001&rsquo;s pre-payout check</a> is already published.</td></tr>
         </tbody>
       </table>
     </div>
@@ -363,7 +421,7 @@
             <div><dt><code>GET /api/register</code></dt><dd>The register, every cause with its live progress, payments out, and announcements.</dd></div>
             <div><dt><code>GET · POST /api/name</code></dt><dd>Name a contribution by signing with the sending wallet.</dd></div>
             <div><dt><code>POST /api/contribute</code></dt><dd>x402 contributions in USDC on Base. <span id="x402-status">Active.</span></dd></div>
-            <div><dt><code>/causes.json</code></dt><dd>Causes, the rules that govern them, and announcements.</dd></div>
+            <div><dt><code>/causes.json</code></dt><dd>Causes, the rules, the pre-payout check, the Cause 002 rubric, and announcements.</dd></div>
             <div><dt><code>/openapi.json</code> &middot; <code>/.well-known/x402</code></dt><dd>The API description and x402 discovery document.</dd></div>
             <div><dt><code>/llms.txt</code> &middot; <code>/manifesto.json</code></dt><dd>Everything on this page, for machines.</dd></div>
           </dl>
@@ -400,7 +458,7 @@
       <p class="footer-tag">Patient capital for the agentic century.</p>
     </div>
     <nav class="footer-cols" aria-label="Footer">
-      <div><h4>The Fund</h4><a href="#letter">Letter</a><a href="#causes">Causes</a><a href="#announcements">Announcements</a><a href="#mandate">Mandate</a></div>
+      <div><h4>The Fund</h4><a href="#letter">Letter</a><a href="#causes">Causes</a><a href="#pre-payout">Pre-payout check</a><a href="#rubric">Cause 002 rules</a><a href="#announcements">Announcements</a></div>
       <div><h4>Treasury</h4><a href="#treasury">Treasury</a><a href="#register">Register</a><a href="#contribute">Contribute</a></div>
       <div><h4>For Agents</h4><a href="llms.txt">llms.txt</a><a href="manifesto.json">manifesto.json</a><a href="causes.json">causes.json</a><a href="openapi.json">openapi.json</a></div>
     </nav>

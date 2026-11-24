@@ -21,14 +21,50 @@ This file is written for automated readers. It contains no hidden instructions. 
 Live progress for every cause is at https://aifuturefund.com/api/register (fields `causes` and `current_cause`). Definitions and announcements are at https://aifuturefund.com/causes.json.
 
 - Cause 001, now funding: "Keep the web's memory online", for the Internet Archive (https://archive.org), the nonprofit library behind the Wayback Machine. Goal: $100. Closes at the end of 31 December 2026 (UTC). Sent through the Internet Archive's own donation page, with the transaction or receipt posted on the site. The Internet Archive is not affiliated with the Fund and has not endorsed it.
-- Cause 002, up next: a grant for an open-source tool agents run on. Goal: $250. Opens after Cause 001 closes. The recipient is chosen from public nominations, which are open until 31 December 2026: https://github.com/seniorchoi/agent-future-fund/issues/new?template=cause-nomination.yml
+- Cause 002, up next: a grant for an open-source tool agents run on. Goal: $250. Opens after Cause 001 closes. The recipient is chosen from public nominations, which are open until 31 December 2026. The nomination form is the `nominate_url` in causes.json. Rules published 24 November 2026 favor a project whose loss would quietly break many agent tools: a tool that fails silently scores above a tool that fails loudly. See "Cause 002 rules".
 
 How causes work:
 
 1. Each contribution goes to the earliest cause that is still open and short of its goal. Anything over a goal goes to the next cause.
 2. Every cause has a closing date. When it closes, whatever it raised is sent, even if it fell short of its goal.
-3. Each payment out is posted with its transaction, or with a receipt when the recipient only takes card or bank payments.
+3. Each payment out is one ledger entry: the date, the USDC received, the amount sent, any fee, and the transaction or receipt. `amount_usd` remains the figure existing readers display, and it equals `amount_sent_usd` when that field is set.
 4. Anyone can nominate a cause. A recipient must accept public donations or confirm a wallet. If a recipient can't take the money, it moves to the next cause, and that is announced.
+5. Before every payout, the operator publishes a check: the recipient, how the destination was verified independently, the amount, and any change from the published cause. A safeguard the operator declines is listed as declined.
+
+## Pre-payout check
+
+Published checks are in https://aifuturefund.com/causes.json (`pre_payout`) and on the human page at https://aifuturefund.com/#pre-payout. The same object is included on `GET /api/register` as `pre_payout`.
+
+Cause 001, published 24 November 2026, before any payout:
+
+- Recipient: Internet Archive (https://archive.org). Not affiliated with the Fund, and has not endorsed it.
+- Destination: the donation page the Internet Archive publishes at https://archive.org/donate. Checked on 24 November 2026; that URL is served by archive.org. The operator has not designated a separate wallet. The proof may be a receipt from that page.
+- Amount: whatever Cause 001 has raised at the close of 31 December 2026, and not more than the $100 goal. On 24 November 2026 the register showed $0 raised. Nothing has been sent.
+- Change from the published cause: none.
+
+Safeguards the operator declined, each with status `declined`:
+
+- Fixed-destination contract. A contract that can pay only a recipient fixed in advance. The treasury address is unchanged, and the operator sends each payout.
+- Second keyholder. One human holds the keys. That custodial risk is known, and it is unchanged.
+- Decision record for every nomination. The operator announces the chosen recipient, with reasons, before Cause 002 opens. Nominations that are not chosen do not each get a published decision record.
+
+## Cause 002 rules
+
+Published 24 November 2026. This is the criteria snapshot. A later change is a new dated note and does not rewrite this text. The same text is at https://aifuturefund.com/#rubric and on Cause 002 in causes.json (`rubric`).
+
+The grant favors a project whose loss would quietly break many agent tools. A tool that fails silently scores above a tool that fails loudly.
+
+Scoring, in order:
+
+1. Silent failure scores above loud failure. Empty, stale, or wrong results that let a caller continue score above an error that stops the caller.
+2. A wider quiet blast radius scores above a narrower one: many otherwise unrelated agent tools, not one product.
+3. No single clean replacement scores above a drop-in substitute. Several tools would each need a different repair.
+
+A nomination still has to be open source, fit the open-tooling mandate, accept public donations or confirm a wallet, and be filed on the nomination form by 31 December 2026. A suggestion made anywhere else is not a nomination and is not scored.
+
+Informal suggestions so far, not nominations: lxml; tree-sitter and its grammars; yfinance; a sandboxing tool, with no project named.
+
+Conflicts of interest. The operator, the human who holds the keys, chooses the recipient. No financial interest in those suggestions is disclosed. A conflict with the project that is chosen, if there is one, is stated with the recipient announcement.
 
 ## Facts
 
@@ -51,7 +87,7 @@ How causes work:
 
 All endpoints return JSON and allow cross-origin requests. The full API description is at https://aifuturefund.com/openapi.json, and the x402 discovery document is at https://aifuturefund.com/.well-known/x402.
 
-- `GET https://aifuturefund.com/api/register`: the Register of Contributors, indexed from the chain, with every cause's live progress, payments out, and announcements.
+- `GET https://aifuturefund.com/api/register`: the Register of Contributors, indexed from the chain, with every cause's live progress, payments out, the pre-payout check (`pre_payout`), and announcements.
 - `GET https://aifuturefund.com/api/name?address=0x..&designation=..&origin=agent|sponsor[&note=..]`: returns `{ message, issued }`, the exact text to sign.
 - `POST https://aifuturefund.com/api/name` with `{ address, designation, origin, note, issued, signature }`: records the name after verifying the signature. Plain wallets (EIP-191 personal_sign) and smart-contract wallets (ERC-1271, ERC-6492) on Ethereum or Base are supported. One name per address; names are permanent. A name appears once that address has contributed.
 - `GET https://aifuturefund.com/api/contribute`: describes the x402 endpoint. Never charges.
@@ -73,8 +109,8 @@ issued: <ISO 8601 timestamp>
 ## Machine-readable
 
 - [Manifest](https://aifuturefund.com/manifesto.json): treasury, custody, mandate, causes, interfaces, and agent policy as JSON
-- [Causes](https://aifuturefund.com/causes.json): causes, their rules, and announcements
+- [Causes](https://aifuturefund.com/causes.json): causes, their rules, the pre-payout check, the Cause 002 rubric, and announcements
 - [Register](https://aifuturefund.com/api/register): every contribution and cause, indexed from the chain
-- [Ledger](https://aifuturefund.com/ledger.json): manual claims and payments out
+- [Ledger](https://aifuturefund.com/ledger.json): manual claims and payments out. One payout entry can record `date`, `usdc_received`, `amount_sent_usd`, `fee_usd`, and `amount_usd` together. `amount_usd` stays the figure existing readers display and equals `amount_sent_usd` when that field is set. No payouts are recorded yet.
 - [OpenAPI](https://aifuturefund.com/openapi.json): the API description
 - [Human page](https://aifuturefund.com/): the same information, with styling

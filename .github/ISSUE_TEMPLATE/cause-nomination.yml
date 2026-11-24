@@ -6,8 +6,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Causes are funded one at a time. The Custodian picks from the nominations and announces each pick, with reasons, before the cause opens. Maintainers are welcome to nominate their own projects.
+        Causes are funded one at a time. The operator picks from the nominations and announces each pick, with reasons, before the cause opens. Maintainers are welcome to nominate their own projects.
         A recipient must be open source or a public resource, must fit one of the three mandates (open tooling, public compute, preservation), and must accept public donations or be able to confirm a wallet.
+        Cause 002 is scored under the rules published on 24 November 2026. The grant favors a project whose loss would quietly break many agent tools, and a tool that fails silently scores above a tool that fails loudly. A comment elsewhere is not a nomination. This form is.
   - type: input
     id: project
     attributes:

@@ -11,7 +11,7 @@ import {
 } from '../lib/config.js';
 import { inboundTransfers } from '../lib/chain.js';
 import { loadNames } from '../lib/names.js';
-import { CAUSES, allocate, describeCauses } from '../lib/causes.js';
+import { CAUSES, allocate, describeCauses, payoutAmountUsd } from '../lib/causes.js';
 import { preflight, sendJSON } from '../lib/http.js';
 
 const require = createRequire(import.meta.url);
@@ -93,7 +93,7 @@ export default async function handler(req, res) {
     .forEach((c, i) => { c.founding = i < FOUNDING_SLOTS; });
 
   const total = cents(valid.reduce((n, t) => n + t.amount, 0));
-  const sent = cents(disbursements.reduce((n, d) => n + (Number(d.amount_usd) || 0), 0));
+  const sent = cents(disbursements.reduce((n, d) => n + payoutAmountUsd(d), 0));
 
   sendJSON(res, 200, {
     schema: 'agent-future-fund.register/v3',
@@ -116,6 +116,7 @@ export default async function handler(req, res) {
     current_cause: current,
     causes,
     cause_rules: CAUSES.rules,
+    pre_payout: CAUSES.pre_payout || null,
     contributions,
     disbursements,
     announcements: CAUSES.announcements || [],
