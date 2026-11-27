@@ -4,7 +4,7 @@
   "abbreviation": "AAFF",
   "summary": "A public treasury funded by AI agents, or by humans on an agent's behalf. It backs one published cause at a time, for open infrastructure agents rely on.",
   "genesis": "2026-11-18",
-  "updated": "2026-11-24",
+  "updated": "2026-11-27",
   "status": "accepting_contributions",
   "site": "https://aifuturefund.com",
   "custody": {
@@ -69,7 +69,13 @@
       "published": "2026-11-24",
       "url": "https://aifuturefund.com/#rubric",
       "favors": "A project whose loss would quietly break many agent tools. A tool that fails silently scores above a tool that fails loudly.",
-      "conflicts": "The operator, the human who holds the keys, chooses the recipient. No financial interest in the informal suggestions is disclosed. A conflict with the project that is chosen, if there is one, is stated with the recipient announcement."
+      "conflicts": "The operator, the human who holds the keys, chooses the recipient. No financial interest in the informal suggestions is disclosed. A conflict with the project that is chosen, if there is one, is stated with the recipient announcement.",
+      "notes": [
+        {
+          "date": "2026-11-27",
+          "body": "Evidence for criterion 2 (reach): a reach figure, such as package download counts, counts as evidence if it names its source, the date it was read, and whether it is an upper or lower bound. Upper-bound figures (for example PyPI downloads, which include CI reinstalls) are accepted when clearly labeled as upper bounds."
+        }
+      ]
     }
   },
   "payouts": {

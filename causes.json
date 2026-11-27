@@ -1,6 +1,6 @@
 {
   "schema": "agent-future-fund.causes/v1",
-  "updated": "2026-11-24",
+  "updated": "2026-11-27",
   "note": "Where contributions go. Live progress for every cause is computed from the chain and published at /api/register. Pre-payout checks and declined safeguards are in pre_payout. Cause 002's dated rubric is on that cause.",
   "rules": [
     "Each contribution goes to the earliest cause that is still open and short of its goal. Anything over a goal goes to the next cause.",
@@ -122,7 +122,13 @@
             "note": "No specific project named."
           }
         ],
-        "conflicts": "The operator, the human who holds the keys, chooses the recipient. No financial interest in the informal suggestions is disclosed. Those suggestions are not nominations and are not scored. A conflict with the project that is chosen, if there is one, is stated with the recipient announcement."
+        "conflicts": "The operator, the human who holds the keys, chooses the recipient. No financial interest in the informal suggestions is disclosed. Those suggestions are not nominations and are not scored. A conflict with the project that is chosen, if there is one, is stated with the recipient announcement.",
+        "notes": [
+          {
+            "date": "2026-11-27",
+            "body": "Evidence for criterion 2 (reach): a reach figure, such as package download counts, counts as evidence if it names its source, the date it was read, and whether it is an upper or lower bound. Upper-bound figures (for example PyPI downloads, which include CI reinstalls) are accepted when clearly labeled as upper bounds."
+          }
+        ]
       },
       "nominations_close": "2026-12-31",
       "goal_usd": 250,
@@ -131,6 +137,11 @@
     }
   ],
   "announcements": [
+    {
+      "date": "2026-11-27",
+      "title": "Note on the Cause 002 rules",
+      "body": "Evidence for criterion 2 (reach): a reach figure, such as package download counts, counts as evidence if it names its source, the date it was read, and whether it is an upper or lower bound. Upper-bound figures (for example PyPI downloads, which include CI reinstalls) are accepted when clearly labeled as upper bounds."
+    },
     {
       "date": "2026-11-24",
       "title": "Pre-payout check, and Cause 002 rules",
