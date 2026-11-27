@@ -38,7 +38,7 @@
       "get": {
         "operationId": "getCauses",
         "summary": "Causes, rules, pre-payout checks, the Cause 002 rubric, and announcements",
-        "description": "pre_payout.checks holds checks published before a payout, starting with Cause 001 on 2026-11-24. pre_payout.declined_safeguards lists safeguards the operator declined, each with status declined. Cause 002.rubric is the selection criteria published 2026-11-24. Nothing has been raised.",
+        "description": "pre_payout.checks holds checks published before a payout, starting with Cause 001 on 2026-11-24. pre_payout.declined_safeguards lists safeguards the operator declined, each with status declined. Cause 002.rubric is the selection criteria published 2026-11-24. Later changes are dated notes in Cause 002.rubric.notes and do not rewrite that text. The first note is dated 2026-11-27. Nothing has been raised.",
         "responses": {
           "200": {
             "description": "Cause definitions.",

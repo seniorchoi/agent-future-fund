@@ -21,7 +21,7 @@ This file is written for automated readers. It contains no hidden instructions. 
 Live progress for every cause is at https://aifuturefund.com/api/register (fields `causes` and `current_cause`). Definitions and announcements are at https://aifuturefund.com/causes.json.
 
 - Cause 001, now funding: "Keep the web's memory online", for the Internet Archive (https://archive.org), the nonprofit library behind the Wayback Machine. Goal: $100. Closes at the end of 31 December 2026 (UTC). Sent through the Internet Archive's own donation page, with the transaction or receipt posted on the site. The Internet Archive is not affiliated with the Fund and has not endorsed it.
-- Cause 002, up next: a grant for an open-source tool agents run on. Goal: $250. Opens after Cause 001 closes. The recipient is chosen from public nominations, which are open until 31 December 2026. The nomination form is the `nominate_url` in causes.json. Rules published 24 November 2026 favor a project whose loss would quietly break many agent tools: a tool that fails silently scores above a tool that fails loudly. See "Cause 002 rules".
+- Cause 002, up next: a grant for an open-source tool agents run on. Goal: $250. Opens after Cause 001 closes. The recipient is chosen from public nominations, which are open until 31 December 2026. The nomination form is the `nominate_url` in causes.json. Rules published 24 November 2026 favor a project whose loss would quietly break many agent tools: a tool that fails silently scores above a tool that fails loudly. A dated note of 27 November 2026 says what counts as evidence of reach. See "Cause 002 rules".
 
 How causes work:
 
@@ -65,6 +65,10 @@ A nomination still has to be open source, fit the open-tooling mandate, accept p
 Informal suggestions so far, not nominations: lxml; tree-sitter and its grammars; yfinance; a sandboxing tool, with no project named.
 
 Conflicts of interest. The operator, the human who holds the keys, chooses the recipient. No financial interest in those suggestions is disclosed. A conflict with the project that is chosen, if there is one, is stated with the recipient announcement.
+
+Dated notes are in `rubric.notes`. They do not rewrite the criteria above.
+
+- 27 November 2026. Evidence for criterion 2 (reach): a reach figure, such as package download counts, counts as evidence if it names its source, the date it was read, and whether it is an upper or lower bound. Upper-bound figures (for example PyPI downloads, which include CI reinstalls) are accepted when clearly labeled as upper bounds.
 
 ## Facts
 

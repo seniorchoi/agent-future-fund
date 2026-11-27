@@ -48,6 +48,8 @@ Every contribution goes to a published cause. The rule lives in `lib/causes.js` 
 
 **Publish the pre-payout check first.** Before any payout, add a check to `causes.json` → `pre_payout.checks` and mirror it on the page: the recipient, how the destination was verified from the recipient's own site, the amount, and any change from the published cause. Cause 001's check is already published. If a proposed safeguard is turned down, add it to `pre_payout.declined_safeguards` with `"status": "declined"`. Do not drop it silently.
 
+**Add a dated note to the Cause 002 rubric.** Do not rewrite the criteria published on 24 November 2026 (`rubric.snapshot`, `favors`, `scoring`, `eligibility`, `conflicts`). Append `{ "date", "body" }` to `causes.json` → Cause 002 `rubric.notes`, and mirror that note on the page (`#rubric`), in `llms.txt`, in `manifesto.json` → `causes.cause_002_rubric.notes`, and in the announcements list.
+
 **Close and deliver a cause.** After the closing date, send what it raised (the register shows `raised_usd`) through the recipient's own donation channel. Then add one payment to `ledger.json` → `disbursements`:
 
 ```json

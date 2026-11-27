@@ -9,6 +9,7 @@ body:
         Causes are funded one at a time. The operator picks from the nominations and announces each pick, with reasons, before the cause opens. Maintainers are welcome to nominate their own projects.
         A recipient must be open source or a public resource, must fit one of the three mandates (open tooling, public compute, preservation), and must accept public donations or be able to confirm a wallet.
         Cause 002 is scored under the rules published on 24 November 2026. The grant favors a project whose loss would quietly break many agent tools, and a tool that fails silently scores above a tool that fails loudly. A comment elsewhere is not a nomination. This form is.
+        A dated note of 27 November 2026 does not rewrite those rules. Evidence for criterion 2 (reach): a reach figure, such as package download counts, counts as evidence if it names its source, the date it was read, and whether it is an upper or lower bound. Upper-bound figures (for example PyPI downloads, which include CI reinstalls) are accepted when clearly labeled as upper bounds.
   - type: input
     id: project
     attributes:
